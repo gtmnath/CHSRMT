@@ -18,7 +18,7 @@ from datetime import datetime
 APP_VERSION = "v2.0-WBGT-Field"
 
 st.set_page_config(
-    page_title=f"CHSRMT {APP_VERSION}",
+    page_title="CHSRMT",
     layout="wide",
 )
 
@@ -27,14 +27,14 @@ st.markdown("""
 h1 {font-size: 1.45rem !important; margin-bottom: 0.3rem;}
 h2 {font-size: 1.25rem !important; margin-bottom: 0.25rem;}
 h3 {font-size: 1.05rem !important; margin-bottom: 0.2rem;}
-div[data-testid="stMarkdownContainer"] p {margin-bottom: 0.25rem;}
+div[data-testid="stMarkdownContainer"] p {margin-bottom: 0.15rem;}
 
 .welcome-box {
     background: linear-gradient(90deg, #0f4c75, #3282b8);
     padding: 1rem;
     border-radius: 10px;
     color: white;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.55rem;
 }
 .welcome-box h2 {
     font-size: 1.35rem;
@@ -49,18 +49,32 @@ div[data-testid="stMarkdownContainer"] p {margin-bottom: 0.25rem;}
     color: #1f6fb2;
     font-weight: 700;
     font-size: 1.12rem;
-    margin-top: 0.7rem;
+    margin-top: 0.45rem;
     margin-bottom: 0.12rem;
 }
 .section-sub {
     color: #5f7f9c;
     font-size: 0.90rem;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.2rem;
 }
+div.block-container {padding-top: 1rem; padding-bottom: 1rem;}
+div[data-testid="stVerticalBlock"] {gap: 0.35rem;}
 </style>
 """, unsafe_allow_html=True)
 
 ss = st.session_state
+
+def subtle_divider():
+    """Small visual separator between major result cards."""
+    st.markdown(
+        '<div style="border-top:1px solid rgba(0,0,0,0.10); margin:10px 0 12px 0;"></div>',
+        unsafe_allow_html=True
+    )
+
+def result_header(label: str = "Results below correspond to the inputs entered above."):
+    subtle_divider()
+    st.caption(label)
+
 
 # ----------------------------
 # Unit conversion helpers
@@ -87,12 +101,12 @@ HSP_AMBER = 4.0   # Caution
 # else -> Withdrawal
 
 # ----------------------------
-# MWL (Metabolic Work Limit) model parameters
+# MWL (Metabolic Work Load) model parameters
 # These are "calibration knobs" that we will tune using your field scenarios.
 # ----------------------------
 ss_default("MWL_A0", 450.0)     # base W/m²
-ss_default("MWL_A_wb", 12.0)     # wet-bulb penalty weight
-ss_default("MWL_A_rad", 4.0)    # radiant penalty weight (GT-DB)
+ss_default("MWL_A_wb", 12.0)     # wet-bulb adjustment weight
+ss_default("MWL_A_rad", 4.0)    # radiant adjustment weight (GT-DB)
 ss_default("MWL_A_wind", 10.0)  # wind benefit weight (sqrt(ws))
 ss_default("MWL_MIN", 60.0)     # clamp
 ss_default("MWL_MAX", 450.0)    # clamp
@@ -231,25 +245,45 @@ ss_default("landing_open", False)
 
 if not ss["landing_open"]:
     st.markdown("""
+    <h2 style='margin-bottom:0.2rem;'>Calibrated Heat Stress Risk Management Tool (CHSRMT)</h2>
+    <p style='margin-top:0; color: #555;'>
+    Field-ready decision support for occupational heat stress and heat strain
+    </p>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+
+    st.markdown("""
     <div class="welcome-box">
-        <h2>☀️ CALIBRATED HEAT STRESS RISK MANAGEMENT TOOL(CHSRMT) — Field Heat-Stress Decision Support</h2>
+        <h2>☀️ Field Heat-Stress Assessment Dashboard</h2>
         <p><b>WBGT</b> - Regulatory Guide For Env.Heat Hazard. <b>Heat Strain Profile(HSP)</b> - Human Cooling Ability -vs-Heat load By MWL (W/m²).</p>
-        <p><b>Workflow:</b> Inputs → Baseline WBGT → Penalties → WBGT-effective → HSP (before/after) → Guidance → Logging</p>
+        <p><b>Workflow:</b> Inputs → Baseline WBGT → Exposure Adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("### What this tool does")
     st.markdown("""
-• Computes WBGT baseline and WBGT-effective (after PPE/enclosure/radiant adjustments)  
-• Estimates **MWL (Metabolic Work Limit, W/m²)** when an instrument **TWL** is not available  
-• Computes **HSP** before and after penalties to reflect **Human Cooling Margin**  
+• Computes WBGT baseline and Effective WBGT (after PPE/enclosure/radiant adjustments)  
+• Estimates **MWL (Metabolic Work Load, W/m²)** when an instrument **TWL(Thermal Work Limits) reading** is not available  
+• Computes **HSP** before and after exposure adjustments  to reflect **Human Cooling Margin**
+
+### Definitions / Explanations
+
+• **Heat stress**: external thermal load from environment and work conditions  
+• **Heat strain**: physiological response as the body attempts to maintain thermal balance  
+• **WB (Wet‑Bulb)**: reflects evaporative potential (physiological limit)  
+• **WBGT**: screening / regulatory heat-hazard index  
+• **TWL**: measured cooling capacity (instrument)  
+• **MWL**: modeled cooling capacity (W/m²)  
+• **HSP**: heat load relative to cooling capacity (lower is safer)
+  
 
 • **Wet‑Bulb (WB)** reflects how well sweat can evaporate (true physiological limit)  
 • **WBGT** = regulatory heat‑hazard index | **TWL** = measured cooling capacity | **MWL** = modeled cooling capacity | **HSP** = heat load vs cooling ability  
 • **Higher MWL** → the person can sustain work for longer durations | **Lower MWL** → shorter sustainable duration  
 • **Acclimatization** enhances sweat‑gland efficiency and cardiovascular heat tolerance  
 
-**HSP interpretation (down‑to‑earth):**  
+**HSP interpretation (Practical):**  
 • 🟢 **HSP < 0.80** → Cooling exceeds heat load  
 • 🟠 **0.80–0.99** → Heat balance marginal  
 • 🔴 **HSP ≥ 1.00** → Heat gain exceeds heat loss  
@@ -268,8 +302,15 @@ if not ss["landing_open"]:
 # ----------------------------
 # Working page header
 # ----------------------------
-st.markdown("<div class='section-title'>🌡️ CALIBRATED HEAT STRESS RISK MANAGEMENT TOOL — Field Heat-Stress Dashboard</div>", unsafe_allow_html=True)
-st.markdown("<div class='section-sub'>Location → Weather → Baseline → Penalties → Classification → HSP → Action → Logging</div>", unsafe_allow_html=True)
+st.markdown("""
+<h2 style='margin-bottom:0.2rem;'>Calibrated Heat Stress Risk Management Tool (CHSRMT)</h2>
+<p style='margin-top:0; color: #555;'>
+Field-ready decision support for occupational heat stress and heat strain
+</p>
+""", unsafe_allow_html=True)
+
+st.markdown("---")
+st.caption("Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging")
 
 # ======================================================
 # MAIN-PANEL DISPLAY UNITS (MOBILE SAFE)
@@ -289,10 +330,50 @@ ss["units"] = "metric" if unit_choice_main.startswith("Metric") else "imperial"
 st.markdown("""
 **HSP (Heat-Strain Profile)** shows **two values**  
 • Environmental HSP (before PPE/enclosure)  
-• Operational HSP (after penalties)  
+• Operational HSP (after exposure adjustments)  
 
 Higher HSP = **Better Cooling Margin**.
 """)
+
+# -------------------------
+# Reset assessment (main page, confirmed)
+# -------------------------
+st.markdown("---")
+if st.button("🔄 Reset assessment (clear current inputs & results)"):
+    ss["confirm_reset"] = True
+
+if ss.get("confirm_reset", False):
+    st.warning("Are you sure you want to reset the current assessment? Please save or export current results before resetting.")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("✅ Yes, reset now"):
+            keys_to_clear = [
+                # Location / weather
+                "city_query","place_name","lat","lon","weather_fetched","weather_provider",
+                # Environmental inputs
+                "db_c","rh_pct","ws_ms","pressure_kpa","gt_c","twb_c","wb_c",
+                # Baseline / effective WBGT
+                "wbgt_raw_c","wbgt_base_c","wbgt_base_frozen","wbgt_eff_c",
+                # Exposure adjustments selections + totals
+                "adj_ppe_pcls","adj_enclosure_c","adj_radiant_c","adj_solar_c","adj_misc_c",
+                "penalties_applied","total_penalty_c",
+                # HSP / MWL computed values and status flags
+                "mwl_env_sig","mwl_env_prev","hsp_calib_ready",
+                # Optional instrument field
+                "wbgt_instr",
+                # Any cached geo results
+                "geo_results","geo_query_sig","place_query"
+            ]
+            for k in keys_to_clear:
+                if k in ss:
+                    del ss[k]
+            del ss["confirm_reset"]
+            st.rerun()
+    with c2:
+        if st.button("❌ Cancel"):
+            del ss["confirm_reset"]
+
+
 
 # ======================================================================
 # BLOCK 2 — Sidebar controls (Mirror only — no duplicate masters)
@@ -342,8 +423,8 @@ with st.sidebar:
     st.write(f"🔴 Withdrawal: ≥ {fmt_temp(C, ss['band_units'])}")
 
     st.markdown("---")
-    st.caption(f"Build: {APP_VERSION}")
-
+    
+st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
 # ======================================================================
 # BLOCK 3 — LOCATION SEARCH (OPEN-METEO GEOCODER)
 # ======================================================================
@@ -526,7 +607,7 @@ st.caption(
 # BLOCK 5 — COMPUTE NATURAL WET-BULB + WBGT BASELINE (with frozen baseline)
 # ======================================================================
 
-with st.expander("🧮 Baseline WBGT Calculation (Before Penalties)", expanded=False):
+with st.expander("🧮 Baseline WBGT Calculation (Before exposure adjustments)", expanded=False):
 
     # Pull current internal values (always in °C internally)
     db_c  = float(ss["db_c"])
@@ -594,7 +675,7 @@ with st.expander("🧮 Baseline WBGT Calculation (Before Penalties)", expanded=F
     # ---------------------------------------------------------------
     # Display baseline metrics
     # ---------------------------------------------------------------
-    st.subheader("Computed Baseline (No Penalties Applied)")
+    st.subheader("Computed Baseline (No exposure adjustments applied)")
     c1, c2, c3 = st.columns(3)
     c1.metric("Natural Wet-Bulb", fmt_temp(twb_c, ss["units"]))
     c2.metric("WBGT Baseline (Frozen)", fmt_temp(ss["wbgt_base_frozen"], ss["units"]))
@@ -611,7 +692,7 @@ with st.expander("🧮 Baseline WBGT Calculation (Before Penalties)", expanded=F
 st.markdown("### 📟 Instrument Reference (Calibration Mode)")
 st.caption(
     "Optional: enter instrument values to display Heat Strain Profile (HSP). "
-    "These values do NOT affect WBGT baseline or penalties."
+    "These values do NOT affect WBGT baseline or exposure adjustments."
 )
 
 colA, colB = st.columns(2)
@@ -636,7 +717,7 @@ with colB:
 ss["hsp_calib_ready"] = bool(ss.get("twl_measured", 0.0) > 0 and ss.get("wbgt_instr", 0.0) > 0)
 
 # ======================================================================
-# Exposure Adjustments / Penalties (°C internal truth)
+# Exposure adjustments (°C internal truth)
 # ======================================================================
 
 PPE_PRESETS     = {"None": 0.0, "Light": 1.0, "Moderate": 2.0, "Heavy": 3.0}
@@ -644,7 +725,7 @@ VEHICLE_PRESETS = {"None": 0.0, "Open": 1.0, "Enclosed": 2.0, "Poorly ventilated
 RADIANT_PRESETS = {"None": 0.0, "Hot surfaces": 2.0, "Direct radiant": 4.0, "Extreme radiant": 5.0}
 ADHOC_PRESETS   = {"None": 0.0, "Minor": 1.0, "Moderate": 2.0, "Severe": 4.0}
 
-st.markdown("## 🔥 Exposure Adjustments / Penalties")
+st.markdown("## 🔥 Exposure adjustments")
 
 def delta_label(dc: float) -> str:
     return f"{dc:.1f}°C" if ss["units"] == "metric" else f"{dc * 9/5:.1f}°F"
@@ -711,7 +792,7 @@ with col4:
 # BLOCK 5B — APPLY PENALTIES SAFELY (unit-aware, clamped, no negatives)
 # ======================================================================
 
-st.markdown("## 🚀 Apply Penalties & Compute WBGT-Effective")
+st.markdown("## 🚀 Apply exposure adjustments & compute Effective WBGT")
 
 if st.button("Apply adjustments & compute"):
 
@@ -753,7 +834,7 @@ if st.button("Apply adjustments & compute"):
             penalty_str = f"+{total_penalty_c:.1f} °C"
 
         st.success(
-            f"Penalties applied ({penalty_str}) → WBGT-effective = {fmt_temp(wbgt_eff_c, ss['units'])}. "
+            f"Exposure adjustments applied ({penalty_str}) → Effective WBGT = {fmt_temp(wbgt_eff_c, ss['units'])}. "
             "Scroll down for Heat-Stress Classification."
         )
 
@@ -855,8 +936,8 @@ def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
     if wbgt_eff_c < B:
         return ("🟠", "CAUTION", "Increase supervision. Enforce hydration and basic work–rest cycles.", 1, "#f39c12")
     if wbgt_eff_c < C:
-        return ("🔴", "HIGH STRAIN", "Limit exposure. Use short work–rest cycles and active cooling.", 2, "#e74c3c")
-    return ("🚫", "WITHDRAWAL", "Stop normal work. Only emergency tasks with medical monitoring.", 3, "#7f0000")
+        return ("🔴", "HIGH STRAIN", "Reduce  exposure; move workers to cooler shaded areas; cool  using ventilation/climate control where available; encourage drinking cool water. Use short work–rest cycles.", 2, "#e74c3c")
+    return ("🚫", "WITHDRAWAL", "Stop routine work. Only emergency tasks with medical monitoring.", 3, "#7f0000")
 
 # ------------------------------------------------------------------
 # Inputs
@@ -930,26 +1011,27 @@ wb_color = "#666"
 
 if wb_info_c is not None:
     if wb_info_c < wb_safe_c:
-        wb_msg   = "🟢 Heat dissipation effective"
+        wb_msg   = "🟢 Body Heat dissipation effective"
         wb_color = "#2ecc71"
     elif wb_info_c < wb_strain_c:
-        wb_msg   = "🟡 Heat dissipation becoming limited"
+        wb_msg   = "🟡 Body Heat dissipation becoming limited"
         wb_color = "#f1c40f"
     elif wb_info_c < wb_danger_c:
-        wb_msg   = "🟠 Cooling inadequate / insufficient"
+        wb_msg   = "🟠 Body Cooling inadequate / insufficient"
         wb_color = "#f39c12"
     else:
-        wb_msg   = "🔴 Heat dissipation compromised"
+        wb_msg   = "🔴 Body Heat dissipation compromised"
         wb_color = "#e74c3c"
 
 # ------------------------------------------------------------------
 # WBGT Display Card (with WB thresholds)
 # ------------------------------------------------------------------
+subtle_divider()
 st.markdown(
 f"""
 <div style="padding:16px;border-radius:14px;background:#eef4fb;border-left:8px solid {band_color};">
-  <b style="font-size:28px;color:#0b2239;">WBGT Effective {wbgt_disp}</b><br>
-  <span style="color:#444;">Penalties:</span> <b>{pen_disp}</b><br>
+  <b style="font-size:28px;color:#0b2239;">Effective WBGT  {wbgt_disp}</b><br>
+  <span style="color:#444;">Exposure adjustments:</span> <b>{pen_disp}</b><br>
   <span style="color:#444;">Wet-bulb:</span> <b>{wb_disp}</b><br>
   <div style="margin-top:6px;font-size:0.92rem;line-height:1.25;">
     <span style="color:#2ecc71;font-weight:700;">🟢 {wb1} to {wb2}</span> <span style="color:#555;">→ Heat dissipation effective</span><br>
@@ -967,7 +1049,8 @@ f"""
 # HSP — HUMAN COOLING CAPACITY
 # =====================================================================
 
-st.markdown("### 🧬 Heat-Strain Profile (HSP) — can the body cope?")
+subtle_divider()
+st.markdown("### 🧬 Heat-Strain Profile (HSP) — Body's ability to lose heat & cope")
 
 if not wbgt_base:
     st.info("Baseline WBGT not available.")
@@ -1060,7 +1143,67 @@ else:
 st.markdown("### ⚖ Workplace Policy (WBGT) vs Human Ability to Withstand Heat (HSP)")
 use_phys = st.checkbox("Determine work continuity based on HSP when more protective than WBGT", value=True)
 if use_phys and (hsp >= 1.0 or wbgt_sev < 2):
-    st.warning("Physiology indicates greater danger than WBGT — protection level raised.")
+    st.warning("Human heat-tolerance capacity (HSP) indicates greater danger than WBGT alone, suggesting increased protection is required.")
+# ------------------------------------------------------------------
+# FINAL RISK RESOLUTION (WBGT + HSP, conservative)
+# ------------------------------------------------------------------
+
+# Start with WBGT-derived band
+final_risk = ss.get("risk_band", "LOW")
+
+# Normalize wording (safety)
+final_risk = final_risk.upper()
+
+# Physiological override (HSP more protective than WBGT)
+if use_phys:
+    if hsp >= 1.30:
+        final_risk = "WITHDRAWAL"
+    elif hsp >= 1.00:
+        final_risk = "HIGH STRAIN"
+    elif hsp >= 0.80 and final_risk == "LOW":
+        final_risk = "CAUTION"
+
+# Store for logging / downstream use
+ss["final_risk"] = final_risk
+
+st.markdown("### 🧭 Worker Guidance (Field Actions)")
+
+if final_risk == "LOW":
+    st.success(
+        "✅ **Normal work acceptable**\n\n"
+        "• Maintain hydration (cool water, regular intake)\n"
+        "• Routine supervision\n"
+        "• Continue work with standard rest breaks"
+    )
+
+elif final_risk == "CAUTION":
+    st.warning(
+        "⚠️ **Caution required**\n\n"
+        "• Increase hydration frequency\n"
+        "• Encourage shaded rest periods\n"
+        "• Monitor workers for early heat strain symptoms\n"
+        "• Adjust work pace if possible"
+    )
+
+elif final_risk == "HIGH STRAIN":
+    st.error(
+        "🔴 **High heat strain**\n\n"
+        "• Reduce exposure immediately\n"
+        "• Move workers to shaded or cooled areas\n"
+        "• Use ventilation or cooling where available\n"
+        "• Enforce short work–rest cycles\n"
+        "• Active supervision required"
+    )
+
+elif final_risk == "WITHDRAWAL":
+    st.error(
+        "⛔ **WITHDRAWAL**\n\n"
+        "• Stop routine work\n"
+        "• Only emergency tasks permitted\n"
+        "• Medical monitoring mandatory\n"
+        "• Active cooling required\n"
+        "• Remove workers if cooling cannot be ensured"
+    )
 
 # ======================================================================
 # BLOCK 8 — LOGGING OF COMPUTED DECISIONS (AUDIT TRAIL) — SAFE (NO RERUN SPAM)
@@ -1124,8 +1267,8 @@ if (
 
         # WBGT outputs
         "WBGT baseline frozen (°C)": f"{float(wbgt_base_frozen):.1f}" if wbgt_base_frozen is not None else "",
-        "Penalty total (°C)": f"{total_penalty_c:.1f}",
-        "WBGT effective (°C)": f"{wbgt_eff_c:.1f}",
+        "Exposure adjustment total (°C)": f"{total_penalty_c:.1f}",
+        "Effective WBGT (°C)": f"{wbgt_eff_c:.1f}",
 
         # Risk
         "Risk": ss.get("risk_band", ""),
@@ -1261,7 +1404,7 @@ with st.expander("📘 Guidance & Field Appendices", expanded=False):
 
 # Add bottom padding so footer does not cover buttons/tables
 st.markdown(
-    "<div style='height: 56px;'></div>",
+    "<div style='height: 72px;'></div>",
     unsafe_allow_html=True
 )
 
@@ -1279,9 +1422,9 @@ st.markdown(f"""
     background: rgba(15, 18, 22, 0.94);
     color: #ddd;
     text-align: center;
-    padding: 8px 10px;
-    font-size: 12px;
-    line-height: 1.35;
+    padding: 4px 8px;
+    font-size: 11px;
+    line-height: 1.2;
     border-top: 1px solid rgba(255,255,255,0.08);
     z-index: 9999;
 }}
@@ -1311,4 +1454,3 @@ Feedback & Field Validation:
 </span>
 </div>
 """, unsafe_allow_html=True)
-
