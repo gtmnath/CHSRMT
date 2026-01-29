@@ -1322,6 +1322,12 @@ else:
     )
     csv_data = b""
 
+st.info(
+    "Export is optional. If you choose to export, select a folder and file name "
+    "when prompted. After saving or cancelling, you will return to this assessment screen."
+    "Skip Export if you do not need a record."
+)
+
 st.caption("Export saves a CSV file without leaving the assessment screen.")
 st.download_button(
     label="📤 Export Audit Log (CSV)",
