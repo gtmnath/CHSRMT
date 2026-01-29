@@ -269,22 +269,29 @@ if not ss["landing_open"]:
 
 ### Definitions / Explanations
 
-• **Heat stress**: external thermal load from environment and work conditions  
-• **Heat strain**: physiological response as the body attempts to maintain thermal balance  
-• **WB (Wet‑Bulb)**: reflects evaporative potential (physiological limit)  
-• **WBGT**: screening / regulatory heat-hazard index  
-• **TWL**: measured cooling capacity (instrument)  
-• **MWL**: modeled cooling capacity (W/m²)  
-• **HSP**: heat load relative to cooling capacity (lower is safer)
-  
+• **Heat stress**: external thermal load from the environment and work conditions  
 
-• **Wet‑Bulb (WB)** reflects how well sweat can evaporate (true physiological limit)  
-• **WBGT** = regulatory heat‑hazard index | **TWL** = measured cooling capacity | **MWL** = modeled cooling capacity | **HSP** = heat load vs cooling ability  
-• **Higher MWL** → the person can sustain work for longer durations | **Lower MWL** → shorter sustainable duration  
-• **Acclimatization** enhances sweat‑gland efficiency and cardiovascular heat tolerance  
+• **Heat strain**: the body’s physiological response as it attempts to maintain thermal balance  
+
+• **Wet-Bulb (WB)**: reflects evaporative potential and how effectively sweat can evaporate — a true physiological limit  
+
+• **WBGT**: screening and regulatory heat-hazard index used for compliance and baseline decisions  
+
+• **TWL (Thermal Work Limits)**: instrument-measured cooling capacity of the environment  
+
+• **MWL (Metabolic Work Load, W/m²)**: modeled cooling capacity when TWL instrumentation is not available  
+  – Higher MWL → longer sustainable work duration  
+  – Lower MWL → shorter sustainable work duration  
+
+• **HSP (Heat-Strain Profile)**: heat demand relative to human cooling capacity  
+  – Lower HSP = safer  
+  – Higher HSP = reduced ability to dissipate heat  
+
+• **Acclimatization**: improves sweat-gland efficiency, cardiovascular stability, and overall heat tolerance
+
 
 **HSP interpretation (Practical):**  
-• 🟢 **HSP < 0.80** → Cooling exceeds heat load  
+• 🟢 **HSP < 0.80** → Cooling exceeds heaload  
 • 🟠 **0.80–0.99** → Heat balance marginal  
 • 🔴 **HSP ≥ 1.00** → Heat gain exceeds heat loss  
 
@@ -309,8 +316,13 @@ Field-ready decision support for occupational heat stress and heat strain
 </p>
 """, unsafe_allow_html=True)
 
-st.markdown("---")
-st.caption("Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging")
+st.markdown(
+    "<span style='color:#444;'>Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</span>",
+    unsafe_allow_html=True
+)
+
+# st.markdown("---")
+# st.caption("Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging")
 
 # ======================================================
 # MAIN-PANEL DISPLAY UNITS (MOBILE SAFE)
@@ -503,15 +515,15 @@ with st.expander("📍 Location Search (City Lookup)", expanded=False):
     else:
         st.info("Enter a city name and press **Search city** to begin.")
 # ======================================================================
-# BLOCK 4 — FETCH WEATHER & POPULATE ENVIRONMENTAL INPUTS (MOBILE SAFE)
+# BLOCK 4 — RETRIEVE WEATHER & POPULATE ENVIRONMENTAL INPUTS (MOBILE SAFE)
 # ======================================================================
 
 st.markdown("## 🌡 Environmental Inputs")
 
 # -----------------------------------------
-# Fetch live weather
+# Retrieve live weather
 # -----------------------------------------
-fetch_btn = st.button("🌤 Fetch Weather (Open-Meteo)")
+fetch_btn = st.button("🌤 Retrieve Weather (Open-Meteo)")
 
 if fetch_btn:
     lat = ss.get("lat", None)
@@ -600,9 +612,14 @@ with col5:
 # Mark environment dirty if user edits anything
 ss["env_dirty"] = True
 
-st.caption(
-    "If you entered weather manually, adjust Globe Temperature to reflect sun and radiant load."
+st.markdown(
+    "<span style='color:#444;'>If you entered weather manually, adjust Globe Temperature to reflect sun and radiant load.</span>",
+    unsafe_allow_html=True
 )
+
+# st.caption(
+  #  "If you entered weather manually, adjust Globe Temperature to reflect sun and radiant load."
+# )
 # ======================================================================
 # BLOCK 5 — COMPUTE NATURAL WET-BULB + WBGT BASELINE (with frozen baseline)
 # ======================================================================
@@ -689,11 +706,16 @@ with st.expander("🧮 Baseline WBGT Calculation (Before exposure adjustments)",
 # (Used ONLY for HSP calibration; does NOT change WBGT baseline logic)
 # ======================================================================
 
-st.markdown("### 📟 Instrument Reference (Calibration Mode)")
-st.caption(
-    "Optional: enter instrument values to display Heat Strain Profile (HSP). "
-    "These values do NOT affect WBGT baseline or exposure adjustments."
+st.markdown(
+    "<span style='color:#444;'>Optional: enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
+    unsafe_allow_html=True
 )
+
+# st.markdown("### 📟 Instrument Reference (Calibration Mode)")
+# st.caption(
+  #  "Optional: enter instrument values to display Heat Strain Profile (HSP). "
+   # "These values do NOT affect WBGT baseline or exposure adjustments."
+# )
 
 colA, colB = st.columns(2)
 
@@ -1284,7 +1306,9 @@ if (
     ss["audit_log"].append(log_entry)
     ss["last_logged_compute_id"] = current_compute_id
 
-# Display log
+# -----------------------------
+# Audit Log Display & Export
+# -----------------------------
 has_log = bool(ss["audit_log"])
 
 if has_log:
@@ -1292,16 +1316,39 @@ if has_log:
     st.dataframe(df, use_container_width=True)
     csv_data = df.to_csv(index=False).encode("utf-8")
 else:
-    st.info("No computed decisions yet. Records appear after you press **Apply adjustments & compute**.")
+    st.info(
+        "No computed decisions yet. Records appear after you press "
+        "**Apply adjustments & compute**."
+    )
     csv_data = b""
 
+st.caption("Export saves a CSV file without leaving the assessment screen.")
 st.download_button(
-    label="📥 Download Audit Log as CSV",
+    label="📤 Export Audit Log (CSV)",
     data=csv_data,
     file_name=f"CHSRMT_Audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     mime="text/csv",
     disabled=not has_log,
 )
+
+# Display log
+# has_log = bool(ss["audit_log"])
+
+# # if has_log:
+  #  df = pd.DataFrame(ss["audit_log"])
+   # st.dataframe(df, use_container_width=True)
+    # csv_data = df.to_csv(index=False).encode("utf-8")
+# else:
+  #  st.info("No computed decisions yet. Records appear after you press **Apply adjustments & compute**.")
+   # csv_data = b""
+
+# st.download_button(
+  #  label="📥 Download Audit Log as CSV",
+   # data=csv_data,
+    # file_name=f"CHSRMT_Audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+    # mime="text/csv",
+    # disabled=not has_log,
+# )
 
 # ======================================================================
 # BLOCK 9 — APPENDIX & FIELD GUIDANCE (MASTER COLLAPSIBLE) + FOOTER SAFE
