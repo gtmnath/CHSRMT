@@ -1126,24 +1126,44 @@ hsp = (wbgt_op * 200.0) / (max(1.0, mwl_op) * 30.0)
 
 # Interpretation
 if hsp < 0.8:
-    h_icon = "🟢"; h_band="Cooling exceeds heat load"; h_color="#2ecc71"
+    h_icon = "🟢"; h_band="Cooling Exceeds Heat Load"; h_color="#2ecc71"
 elif hsp < 1.0:
-    h_icon = "🟠"; h_band="Heat balance marginal"; h_color="#f39c12"
+    h_icon = "🟠"; h_band="Heat Balance Marginal"; h_color="#f39c12"
 else:
-    h_icon = "🔴"; h_band="Heat gain exceeds heat loss"; h_color="#e74c3c"
+    h_icon = "🔴"; h_band="Heat Gain Exceeds Heat Loss"; h_color="#e74c3c"
 
 # HSP Card (field-friendly)
 st.markdown(
 f"""
 <div style="padding:14px;border-radius:12px;background:#ffffff;border-left:8px solid {h_color};">
   <b style="font-size:18px;color:{h_color};">{h_icon} {h_band}</b><br>
-  <span style="color:#222;">HSP (heat demand ÷ cooling ability): <b>{hsp:.2f}</b></span><br>
+  <span style="color:#222;">HSP (Heat Demand ÷ Cooling Ability): <b>{hsp:.2f}</b></span><br>
   <span style="color:#666;font-size:0.92rem;">Wet-bulb influences sweat evaporation — HSP helps show whether human cooling can keep up.</span>
 </div>
 """, unsafe_allow_html=True
 )
 
-with st.expander("Show MWL / cooling capacity details", expanded=False):
+with st.expander("ℹ️ HSP Interpretation (Quick Field Guide)", expanded=False):
+    st.markdown(f"""
+**What is  HSP?**
+HSP compares **Heat Demand** against **Human Cooling Capacity** (MWL).
+
+**How to read HSP**
+- 🟢 **HSP < 0.80** → Cooling exceeds Heat load (Generally safe with routine vigilance)
+- 🟠 **0.80–0.99** → Heat Balance is marginal (Small increases in Heat/PPE/Workload can push into danger)
+- 🔴 **HSP ≥ 1.00** → Heat Gain likely exceeds Heat loss (Remove Worker From  Heat Exposure or Apply Active Cooling)
+
+**How to use with WBGT**
+WBGT is a **Policy/Screening Index**.  
+HSP is a **Human Capacity / Strain Indicator**.  
+When they disagree, follow the **More Protective** Outcome.
+
+**Current reading**
+- HSP: **{hsp:.2f}** → **{h_band}**
+""")
+
+
+with st.expander("Show MWL / Cooling Capacity Details", expanded=False):
     st.markdown(
         f"""<div style="padding:12px;border-radius:10px;background:#f7f7f7;">
         Cooling capacity (MWL, environmental): <b>{mwl_env:.0f} W/m²</b><br>
@@ -1384,22 +1404,55 @@ with st.expander("📘 Guidance & Field Appendices", expanded=False):
         - Headache, fatigue  
         - Cramps
         """)
+    with st.expander("⚡ Acclimatization — Practical Field Approach"):
+                   st.markdown("""
+                   **How acclimatization should be viewed (modern approach)**
 
-    with st.expander("⚡ Acclimatization Expectations (OSHA/NIOSH style)"):
-        st.markdown("""
-        **Typical timeline**
-        - 5–7 shifts of increasing exposure  
-        - Begin at **20% of usual duration** on day 1, add **20% per day**
+                   Acclimatization is **not a rigid schedule**, but a **period of reduced expectations**
+                   that allows the worker’s body to adapt safely to heat.
+
+                   • Productivity expectations should be **temporarily lowered**  
+                   • **Rest breaks should be encouraged**, not penalized  
+                   • **Self-pacing** should be allowed wherever feasible  
+
+                   **Supervisory responsibilities during acclimatization**
+
+                    Acclimatization is a period of **heightened vigilance**, requiring:
+
+                    • Frequent or continuous observation by supervisors  
+                    • Buddy systems, especially during the first few shifts  
+                    • Periodic check-ins asking:
+                    – “How are you feeling?”
+                    – “Can you continue safely?”
+                    – “Do you need a break or cooling?”
+
+                    **Higher-risk situations**
+                    • New workers  
+                    • Workers returning after ≥ 1 week absence  
+                    • Workers recovering from illness  
+                    • Sudden increases in heat, PPE, or workload
+
+                    **Key principle**
+                    Acclimatization succeeds when **workers are protected, not pushed**.
+    """)
+
+
+
+    # with st.expander("⚡ Acclimatization Expectations (OSHA/NIOSH style)"):
+      #  st.markdown("""
+       # **Typical timeline**
+        # - 5–7 shifts of increasing exposure  
+        # - Begin at **20% of usual duration** on day 1, add **20% per day**
         
-        **High-risk when**
-        - New workers  
-        - Returning after > 1 week absence  
-        - Workers recently ill
+        # **High-risk when**
+        # - New workers  
+        # - Returning after > 1 week absence  
+        # - Workers recently ill
         
-        **Supervision**
-        - Buddy system during first 1–3 days  
-        - Observe for confusion or loss of coordination
-        """)
+        # **Supervision**
+        # - Buddy system during first 1–3 days  
+        # - Observe for confusion or loss of coordination
+        # """)
 
     with st.expander("⏱ Work–Rest / Supervision Prompts"):
         st.markdown("""
@@ -1423,11 +1476,13 @@ with st.expander("📘 Guidance & Field Appendices", expanded=False):
 
     with st.expander("🚩 Early Warning Signs & First-Aid Triggers"):
         st.markdown("""
+        *Clinical guidance reflects contemporary **NIOSH** and **ACGIH** interpretations of exertional heat illness
+                     and heat stroke, emphasizing **neurologic and functional red-flag symptoms** over classical
+                     thermoregulatory signs.*
         **Red-flag symptoms requiring immediate action**
         - Dizziness, collapse, faintness  
         - Confusion or altered behavior  
         - Vomiting  
-        - Hot, red, dry skin  
         - Staggering movement
         
         **Immediate steps**
@@ -1464,7 +1519,6 @@ st.markdown(
 # ======================================================================
 # FIXED PROFESSIONAL FOOTER — OWNERSHIP + PUBLIC USE + FEEDBACK
 # ======================================================================
-
 st.markdown(f"""
 <style>
 .footer {{
@@ -1502,8 +1556,12 @@ No organization or professional society endorses this tool unless explicitly sta
 
 <span style="opacity:0.9;">
 Feedback & Field Validation:
-<a href="https://forms.gle/7rfrXZXkyCdXqGVs5" target="_blank">https://forms.gle/7rfrXZXkyCdXqGVs5</a>
+<a href="https://forms.gle/7rfrXZXkyCdXqGVs5" target="_blank">
+https://forms.gle/7rfrXZXkyCdXqGVs5
+</a>
 &nbsp; | &nbsp; Build: {APP_VERSION}
 </span>
 </div>
 """, unsafe_allow_html=True)
+
+
