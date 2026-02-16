@@ -22,6 +22,9 @@ st.set_page_config(
     layout="wide",
 )
 
+# ----------------------------
+# Global CSS (compact + mobile-fit improvements)
+# ----------------------------
 st.markdown("""
 <style>
 h1 {font-size: 1.45rem !important; margin-bottom: 0.3rem;}
@@ -29,20 +32,23 @@ h2 {font-size: 1.25rem !important; margin-bottom: 0.25rem;}
 h3 {font-size: 1.05rem !important; margin-bottom: 0.2rem;}
 div[data-testid="stMarkdownContainer"] p {margin-bottom: 0.15rem;}
 
+/* Welcome header box — reduced height */
 .welcome-box {
     background: linear-gradient(90deg, #0f4c75, #3282b8);
-    padding: 1rem;
+    padding: 0.65rem 0.85rem;        /* tighter */
     border-radius: 10px;
     color: white;
-    margin-bottom: 0.55rem;
+    margin-bottom: 0.40rem;          /* tighter */
 }
 .welcome-box h2 {
-    font-size: 1.35rem;
-    margin-bottom: 0.2rem;
+    font-size: 1.15rem;              /* tighter */
+    margin-bottom: 0.15rem;          /* tighter */
+    font-weight: 750;
 }
 .welcome-box p {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     opacity: 0.92;
+    margin: 0.10rem 0;
 }
 
 .section-title {
@@ -57,8 +63,18 @@ div[data-testid="stMarkdownContainer"] p {margin-bottom: 0.15rem;}
     font-size: 0.90rem;
     margin-bottom: 0.2rem;
 }
+
 div.block-container {padding-top: 1rem; padding-bottom: 1rem;}
 div[data-testid="stVerticalBlock"] {gap: 0.35rem;}
+
+/* tighter column spacing (helps mobile) */
+div[data-testid="stHorizontalBlock"] { gap: 0.55rem; }
+
+/* extra-tight on narrow screens */
+@media (max-width: 700px) {
+  div[data-testid="stHorizontalBlock"] { gap: 0.35rem; }
+  div.block-container { padding-left: 0.75rem; padding-right: 0.75rem; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,7 +90,6 @@ def subtle_divider():
 def result_header(label: str = "Results below correspond to the inputs entered above."):
     subtle_divider()
     st.caption(label)
-
 
 # ----------------------------
 # Unit conversion helpers
@@ -136,7 +151,6 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
     wbgt_c = float(wbgt_c)
 
     # ── 1) Base MWL from WBGT (smooth, bounded) ──
-    # Tuned to avoid "berserk" values and to stay in a realistic 0–450 W/m² band.
     mwl_base = 600.0 - 0.30 * (wbgt_c ** 2)  # higher WBGT → lower MWL
     mwl_base = max(0.0, min(450.0, mwl_base))
 
@@ -150,7 +164,6 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
     rad_mod = max(0.75, min(1.05, rad_mod))
 
     # ── 4) RH modifier (higher RH suppresses evaporation) ──
-    # Mild boost at very low RH, increasing penalty above ~60%.
     if rh_pct <= 20.0:
         rh_mod = 1.0 + 0.08 * (20.0 - rh_pct) / 20.0   # up to +8%
     elif rh_pct <= 60.0:
@@ -160,7 +173,6 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
     rh_mod = max(0.55, min(1.08, rh_mod))
 
     # ── 5) Extra penalty when Wet Bulb is high (evaporation “ceiling”) ──
-    # Use Stull-style approximation (sufficient for a penalty term).
     def _stull_wb_c(t_c: float, rh: float) -> float:
         rh = max(0.0, min(100.0, rh))
         return (
@@ -172,7 +184,7 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
         )
 
     wb_c = _stull_wb_c(db_c, rh_pct)
-    ss["wb_c"] = wb_c
+    ss["wb_mwl_c"] = wb_c  # ✅ diagnostic only; do not overwrite main WB used elsewhere
     if wb_c > 25.0:
         wb_pen = 1.0 - 0.015 * (wb_c - 25.0)   # 30°C WB → ~0.925
         wb_pen = max(0.55, min(1.0, wb_pen))
@@ -180,11 +192,8 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
         wb_pen = 1.0
 
     mwl = mwl_base * wind_mod * rad_mod * rh_mod * wb_pen
-
-    # Final clamp (keep stable)
     mwl = max(0.0, min(450.0, mwl))
     return float(mwl)
-
 
 def apply_capacity_penalties(mwl_env: float, ppe_c: float, veh_c: float, rad_c: float, adh_c: float) -> float:
     """
@@ -243,9 +252,16 @@ ss_default("audit_log", [])
 # ----------------------------
 ss_default("landing_open", False)
 
+# --- Welcome gate latch (survives idle reconnect by using URL query param) ---
+try:
+    if st.query_params.get("started") == "1":
+        ss["landing_open"] = True
+except Exception:
+    pass
+
 if not ss["landing_open"]:
     st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>Calibrated Heat Stress Risk Management Tool (CHSRMT)</h2>
+    <h2 style='margin-bottom:0.2rem;'>CHSRMT-Calibrated Heat Stress Risk Management Tool</h2>
     <p style='margin-top:0; color: #555;'>
     Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
@@ -255,7 +271,7 @@ if not ss["landing_open"]:
 
     st.markdown("""
     <div class="welcome-box">
-        <h2 style="margin-bottom:0.25rem;">☀️ CALIBRATED HEAT STRESS RISK MANAGEMENT TOOL (CHSRMT) - Field Heat-Stress Assessment Dashboard</h2>
+        <h2 style="margin-bottom:0.25rem;">☀️ CHSRMT-Field Heat-Stress Assessment Dashboard</h2>
         <p style="margin-top:0.15rem;">
           <b>WBGT</b> = Regulatory Screening / Compliance Guide For Environmental Heat Hazard.<br>
           <b>Heat Strain Profile (HSP)</b> = Human Cooling Ability vs Heat Load Using Cooling Capacity (W/m²).
@@ -304,17 +320,20 @@ if not ss["landing_open"]:
     st.markdown("---")
     if st.button("🚀 Start Heat-Stress Assessment", type="primary", use_container_width=True):
         ss["landing_open"] = True
+        try:
+            st.query_params["started"] = "1"
+        except Exception:
+            pass
         st.rerun()
 
     st.stop()
-
 
 # ----------------------------
 # Working page header
 # ----------------------------
 st.markdown("""
 <h2 style='margin-bottom:0.2rem;'>Calibrated Heat Stress Risk Management Tool (CHSRMT)</h2>
-<p style='margin-top:0; color: #555;'>
+<p style='margin-top:0; margin-bottom:0.25rem; color:#222; font-weight:800;'>
 CHSRMT - Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
 </p>
 """, unsafe_allow_html=True)
@@ -323,9 +342,6 @@ st.markdown(
     "<span style='color:#444;'>Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</span>",
     unsafe_allow_html=True
 )
-
-# st.markdown("---")
-# st.caption("Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging")
 
 # ======================================================
 # MAIN-PANEL DISPLAY UNITS (MOBILE SAFE)
@@ -366,7 +382,7 @@ if ss.get("confirm_reset", False):
                 # Location / weather
                 "city_query","place_name","lat","lon","weather_fetched","weather_provider",
                 # Environmental inputs
-                "db_c","rh_pct","ws_ms","pressure_kpa","gt_c","twb_c","wb_c",
+                "db_c","rh_pct","ws_ms","p_kpa","gt_c","twb_c","wb_c",
                 # Baseline / effective WBGT
                 "wbgt_raw_c","wbgt_base_c","wbgt_base_frozen","wbgt_eff_c",
                 # Exposure adjustments selections + totals
@@ -377,23 +393,29 @@ if ss.get("confirm_reset", False):
                 # Optional instrument field
                 "wbgt_instr",
                 # Any cached geo results
-                "geo_results","geo_query_sig","place_query"
+                "geo_results","geo_query_sig","place_query","place_label",
+                # Diagnostics (safe to clear)
+                "wb_mwl_c",
             ]
             for k in keys_to_clear:
                 if k in ss:
                     del ss[k]
+
+            # Clear welcome latch so it truly returns to fresh start
+            try:
+                st.query_params.pop("started", None)
+            except Exception:
+                pass
+
             del ss["confirm_reset"]
             st.rerun()
     with c2:
         if st.button("❌ Cancel"):
             del ss["confirm_reset"]
 
-
-
 # ======================================================================
 # BLOCK 2 — Sidebar controls (Mirror only — no duplicate masters)
 # ======================================================================
-
 with st.sidebar:
     st.title("Heat-Stress Controls")
 
@@ -438,15 +460,17 @@ with st.sidebar:
     st.write(f"🔴 WITHDRAWAL: ≥ {fmt_temp(C, ss['band_units'])}")
 
     st.markdown("---")
-    
+
 st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
+
+
 # ======================================================================
 # BLOCK 3 — LOCATION SEARCH (OPEN-METEO GEOCODER)
 # ======================================================================
-
 with st.expander("📍 Location Search (City Lookup)", expanded=False):
 
-    st.markdown("## 🛰 Location Search (City Lookup)")
+    # (Optional compactness) Removing duplicate H2 header avoids extra vertical space
+    # st.markdown("## 🛰 Location Search (City Lookup)")
 
     place_query = st.text_input(
         "Enter a city name",
@@ -466,12 +490,14 @@ with st.expander("📍 Location Search (City Lookup)", expanded=False):
     if search_btn and place_query.strip():
 
         try:
-            url = (
-                "https://geocoding-api.open-meteo.com/v1/search?"
-                f"name={place_query}&count=10&language=en&format=json"
+            params = {"name": place_query, "count": 10, "language": "en", "format": "json"}
+            resp = requests.get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params=params,
+                timeout=8
             )
-            resp = requests.get(url, timeout=8).json()
-            results = resp.get("results", [])
+            resp.raise_for_status()
+            results = resp.json().get("results", [])
         except Exception:
             results = []
 
@@ -517,6 +543,8 @@ with st.expander("📍 Location Search (City Lookup)", expanded=False):
 
     else:
         st.info("Enter a city name and press **Search city** to begin.")
+
+ 
 # ======================================================================
 # BLOCK 4 — RETRIEVE WEATHER & POPULATE ENVIRONMENTAL INPUTS (MOBILE SAFE)
 # ======================================================================
@@ -540,6 +568,7 @@ if fetch_btn:
                 "https://api.open-meteo.com/v1/forecast?"
                 f"latitude={lat}&longitude={lon}"
                 "&current=temperature_2m,relative_humidity_2m,wind_speed_10m"
+                "&wind_speed_unit=ms"
                 "&pressure_unit=hpa"
             )
             data = requests.get(url, timeout=8).json()
@@ -547,12 +576,12 @@ if fetch_btn:
         except Exception:
             current = {}
 
-        # Extract values (Open-Meteo always returns °C and m/s)
-        temp_c = float(current.get("temperature_2m", ss["db_c"]))
-        rh_pct = float(current.get("relative_humidity_2m", ss["rh_pct"]))
-        ws_ms  = float(current.get("wind_speed_10m", ss["ws_ms"]))
+        # Extract values (temperature °C; wind forced to m/s via wind_speed_unit=ms)
+        temp_c = float(current.get("temperature_2m", ss.get("db_c", 30.0)))
+        rh_pct = float(current.get("relative_humidity_2m", ss.get("rh_pct", 50.0)))
+        ws_ms  = float(current.get("wind_speed_10m", ss.get("ws_ms", 1.0)))
 
-        # Pressure not provided → use standard
+        # Pressure not provided reliably → use standard
         p_kpa  = 101.3
 
         # Write into canonical session variables
@@ -577,52 +606,71 @@ col1, col2, col3, col4, col5 = st.columns(5)
 # --- Dry bulb ---
 with col1:
     if ss["units"] == "metric":
-        ss["db_c"] = st.number_input("Dry Bulb (°C)", value=float(ss["db_c"]))
+        ss["db_c"] = st.number_input("Dry Bulb (°C)", value=float(ss.get("db_c", 30.0)))
     else:
-        db_f = st.number_input("Dry Bulb (°F)", value=float(c_to_f(ss["db_c"])))
+        db_f = st.number_input("Dry Bulb (°F)", value=float(c_to_f(ss.get("db_c", 30.0))))
         ss["db_c"] = f_to_c(db_f)
 
 # --- RH ---
 with col2:
     ss["rh_pct"] = st.number_input(
-        "RH (%)", value=float(ss["rh_pct"]), min_value=0.0, max_value=100.0
+        "RH (%)", value=float(ss.get("rh_pct", 50.0)), min_value=0.0, max_value=100.0
     )
 
 # --- Wind ---
 with col3:
     if ss["units"] == "metric":
-        ss["ws_ms"] = st.number_input("Wind (m/s)", value=float(ss["ws_ms"]))
+        ss["ws_ms"] = st.number_input("Wind (m/s)", value=float(ss.get("ws_ms", 1.0)))
     else:
-        ws_mph = st.number_input("Wind (mph)", value=float(ms_to_mph(ss["ws_ms"])))
+        ws_mph = st.number_input("Wind (mph)", value=float(ms_to_mph(ss.get("ws_ms", 1.0))))
         ss["ws_ms"] = mph_to_ms(ws_mph)
 
 # --- Pressure ---
 with col4:
     if ss["units"] == "metric":
-        ss["p_kpa"] = st.number_input("Pressure (kPa)", value=float(ss["p_kpa"]))
+        ss["p_kpa"] = st.number_input("Pressure (kPa)", value=float(ss.get("p_kpa", 101.3)))
     else:
-        p_inhg = st.number_input("Pressure (inHg)", value=float(kpa_to_inhg(ss["p_kpa"])))
+        p_inhg = st.number_input("Pressure (inHg)", value=float(kpa_to_inhg(ss.get("p_kpa", 101.3))))
         ss["p_kpa"] = inhg_to_kpa(p_inhg)
 
 # --- Globe temperature ---
 with col5:
     if ss["units"] == "metric":
-        ss["gt_c"] = st.number_input("Globe Temp (°C)", value=float(ss["gt_c"]))
+        ss["gt_c"] = st.number_input("Globe Temp (°C)", value=float(ss.get("gt_c", ss.get("db_c", 30.0) + 3.0)))
     else:
-        gt_f = st.number_input("Globe Temp (°F)", value=float(c_to_f(ss["gt_c"])))
+        gt_f = st.number_input("Globe Temp (°F)", value=float(c_to_f(ss.get("gt_c", ss.get("db_c", 30.0) + 3.0))))
         ss["gt_c"] = f_to_c(gt_f)
 
-# Mark environment dirty if user edits anything
-ss["env_dirty"] = True
+# -----------------------------
+# Mark environment dirty ONLY if something actually changed
+# -----------------------------
+_prev_env = ss.get("_prev_env_inputs_block4", None)
+
+_env_now = (
+    round(float(ss["db_c"]), 3),
+    round(float(ss["rh_pct"]), 3),
+    round(float(ss["ws_ms"]), 3),
+    round(float(ss["p_kpa"]), 3),
+    round(float(ss["gt_c"]), 3),
+    ss.get("units", "metric")
+)
+
+# If first run, store and do NOT force reset
+if _prev_env is None:
+    ss["_prev_env_inputs_block4"] = _env_now
+else:
+    if _env_now != _prev_env:
+        ss["env_dirty"] = True
+        ss["_prev_env_inputs_block4"] = _env_now
+    else:
+        # leave env_dirty as-is (Block 5 will clear it after handling)
+        ss["env_dirty"] = bool(ss.get("env_dirty", False))
 
 st.markdown(
     "<span style='color:#444;'>If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load.</span>",
     unsafe_allow_html=True
 )
 
-# st.caption(
-  #  "If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load."
-# )
 # ======================================================================
 # BLOCK 5 — COMPUTE NATURAL WET-BULB + WBGT BASELINE (with frozen baseline)
 # ======================================================================
@@ -643,7 +691,14 @@ with st.expander("🧮 Baseline WBGT Calculation (Before exposure adjustments)",
     if "prev_env" not in ss:
         ss["prev_env"] = {}
 
-    env_now = {"db": db_c, "rh": rh, "gt": gt_c, "ws": ws_ms, "p": p_kpa}
+    # round to prevent float noise triggering resets
+    env_now = {
+        "db": round(db_c, 3),
+        "rh": round(rh, 3),
+        "gt": round(gt_c, 3),
+        "ws": round(ws_ms, 3),
+        "p":  round(p_kpa, 3),
+    }
 
     # Optional “dirty” flag support (from Block 4)
     env_dirty = bool(ss.get("env_dirty", False))
@@ -713,12 +768,6 @@ st.markdown(
     "<span style='color:#444;'>Optional: Enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
     unsafe_allow_html=True
 )
-
-# st.markdown("### 📟 Instrument Reference (Calibration Mode)")
-# st.caption(
-  #  "Optional: Enter instrument values to display Heat Strain Profile (HSP). "
-   # "These values do NOT affect WBGT baseline or exposure adjustments."
-# )
 
 colA, colB = st.columns(2)
 
@@ -813,6 +862,7 @@ with col4:
     preset_c = float(labels[choice])
     _ensure_number_follows_preset("adhoc_preset", "adhoc_delta_input", preset_c)
     ss["pen_adhoc_c"] = number_delta("adhoc_delta_input")
+
 # ======================================================================
 # BLOCK 5B — APPLY PENALTIES SAFELY (unit-aware, clamped, no negatives)
 # ======================================================================
@@ -822,6 +872,7 @@ st.markdown("## 🚀 Apply Exposure Adjustments & Compute Effective WBGT")
 if st.button("Apply Adjustments & Compute"):
 
     wbgt_base_c = ss.get("wbgt_base_frozen", None)  # use frozen baseline
+
     if wbgt_base_c is None:
         st.error("No frozen baseline WBGT available — set environmental inputs first.")
     else:
@@ -837,31 +888,43 @@ if st.button("Apply Adjustments & Compute"):
         rad_c  = min(max(rad_c,  0.0), 5.0)
         ahoc_c = min(max(ahoc_c, 0.0), 4.0)
 
+        # Total penalty (°C), global cap
         total_penalty_c = ppe_c + encl_c + rad_c + ahoc_c
-        total_penalty_c = min(total_penalty_c, 10.0)  # global cap
+        total_penalty_c = min(total_penalty_c, 10.0)
 
-        wbgt_eff_c = wbgt_base_c + total_penalty_c
+        # Effective WBGT (°C)
+        wbgt_eff_c = float(wbgt_base_c) + float(total_penalty_c)
 
+        # Persist results
         ss["total_penalty_c"] = total_penalty_c
         ss["wbgt_eff_c"] = wbgt_eff_c
         ss["penalties_applied"] = True
 
         # ------------------------------------------------------------
-        # CRITICAL: log-safe compute trigger (prevents Streamlit spam)
+        # CRITICAL: log-safe compute trigger (runs only on click)
         # ------------------------------------------------------------
         ss["compute_counter"] = ss.get("compute_counter", 0) + 1
         ss["last_compute_ts"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Display with correct units
-        if ss["units"] == "imperial":
+        # ------------------------------------------------------------
+        # Unit-aware formatting (match the snapshot cards via ss["units"])
+        # ------------------------------------------------------------
+        if ss.get("units", "metric") == "imperial":
             penalty_str = f"+{(total_penalty_c * 9/5):.1f} °F"
+            wbgt_display = f"{(wbgt_eff_c * 9/5 + 32):.1f} °F"
         else:
             penalty_str = f"+{total_penalty_c:.1f} °C"
+            wbgt_display = f"{wbgt_eff_c:.1f} °C"
 
+        # ------------------------------------------------------------
+        # Display success message
+        # ------------------------------------------------------------
         st.success(
-            f"Exposure Adjustments Applied ({penalty_str}) → Effective WBGT = {fmt_temp(wbgt_eff_c, ss['units'])}. "
+            f"Exposure Adjustments Applied ({penalty_str}) → "
+            f"Effective WBGT = {wbgt_display}. "
             "Scroll down for Heat-Stress Classification."
         )
+
 
 # ======================================================================
 # BLOCK 6 — NIOSH / OSHA WBGT & Wet-Bulb Thresholds (with Acclimatization)
@@ -945,9 +1008,14 @@ with st.expander("🎯 Heat-Stress Thresholds (NIOSH / OSHA Reference)", expande
         )
 # ======================================================================
 # BLOCK 7 — HEAT STRESS RISK CLASSIFICATION (WBGT policy + HSP + Wet-Bulb)
-# Single-screen compact dashboard + Sticky actions (HTML-only; no ghosting)
-# + Compact 2×2 Supervisor Actions grid (phone friendly)
+# Single-screen compact dashboard
+# FIX (Feb 2026):
+# - KPI cards render FIRST (phone users see readings first)
+# - Sticky bar is COMPACT and NOT misleading (no emergency line)
+# - Sticky bar renders AFTER final_risk is computed (no NameError)
+# - All emojis are inside strings (prevents U+1F7E2 invalid character errors)
 # ======================================================================
+
 ss = st.session_state
 
 # ---------- Compact CSS (safe) ----------
@@ -959,18 +1027,15 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
 [data-testid="stMarkdownContainer"] p { margin-bottom: 0.35rem; }
 
 /* =========================
-   STICKY ACTION BAR (DASHBOARD)
+   STICKY ACTION BAR (COMPACT, NOT MISLEADING)
    ========================= */
 .sticky-actions{
   position: sticky;
-  top: 0.25rem;
+  top: 0.20rem;
   z-index: 999999;
-  padding: 0.60rem 0.85rem;
-  border-radius: 16px;
-
-  /* fully opaque pleasant blue (no ghosting) */
+  padding: 0.30rem 0.55rem;        /* reduced height */
+  border-radius: 14px;
   background: linear-gradient(90deg, rgba(16,78,140,1.0), rgba(34,130,190,1.0)) !important;
-
   border: 1px solid rgba(255,255,255,0.18);
   box-shadow: 0 6px 18px rgba(0,0,0,0.18);
   overflow: hidden;
@@ -978,59 +1043,42 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
 
 .sticky-row{
   display:flex;
-  gap:12px;
+  gap:10px;
   align-items:center;
   flex-wrap:wrap;
 }
 
+/* "Current risk" pill */
+.current-pill{
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.96);
+  font-weight: 900;
+  font-size: 0.90rem;
+  user-select: none;
+  white-space: nowrap;
+}
+
 /* Observe / Prevent / Manage pills */
 .fake-btn{
-  padding: 10px 14px;
+  padding: 7px 11px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.20);
   color: rgba(255,255,255,0.92);
   font-weight: 850;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   user-select: none;
   letter-spacing: 0.2px;
 }
 
-/* Emergency container — left aligned */
-.emergency{
-  margin-left: 12px;
-  color: rgba(255,255,255,0.95);
-  font-size: 0.95rem;
-  line-height: 1.15;
-  flex: 1 1 420px;
-  text-align: left;
-}
-
-/* "Emergency rule:" label — slightly lighter */
-.emergency-label{
-  font-weight: 600;     /* lighter than STOP */
-  opacity: 0.9;
-  margin-right: 6px;
-}
-
-/* Emergency text wrapper */
-.emergency-text{ opacity: 0.95; }
-
-/* STOP emphasis — strong */
-.emergency-stop{
-  font-weight: 900;
-  letter-spacing: 0.3px;
-  padding: 0 6px;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.15);
-}
-
-/* Mobile adjustment */
 @media (max-width: 900px){
-  .emergency{
-    margin-left: 0;
-    flex-basis: 100%;
-  }
+  .sticky-actions{ top: 0.12rem; }
+  .sticky-row{ gap: 8px; }
+  .current-pill{ font-size: 0.88rem; padding: 6px 10px; }
+  .fake-btn{ font-size: 0.86rem; padding: 6px 10px; }
 }
 
 /* KPI cards */
@@ -1057,7 +1105,6 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
   font-weight:850;
   border:1px solid rgba(0,0,0,0.10);
 }
-.pill-green{ background: rgba(0,255,0,0.10); }
 .pill-amber{ background: rgba(255,170,0,0.14); }
 .pill-red{ background: rgba(255,0,0,0.12); }
 .pill-withdrawal{ background: rgba(142,0,0,0.14); border-color: rgba(142,0,0,0.25); color:#5a0000; }
@@ -1251,21 +1298,32 @@ if wbgt_env is not None:
         h_icon, h_band, h_color = "🔴", "Heat Gain Likely Exceeds Cooling Capacity", "#e74c3c"
 
 # -----------------------------
-# Sticky Supervisor Action Bar (HTML-only)
+# Override logic (conservative): policy first; HSP only if more protective
 # -----------------------------
-st.markdown(
-    '<div class="sticky-actions"><div class="sticky-row">'
-    '<div class="fake-btn">Observe / Care</div>'
-    '<div class="fake-btn">Prevent</div>'
-    '<div class="fake-btn">Manage</div>'
-    '<div class="emergency">'
-    '<span class="emergency-label">Emergency rule:</span>'
-    '<span class="emergency-text">Confusion / Collapse / Seizure → '
-    '<span class="emergency-stop">STOP WORK IMMEDIATELY</span>'
-    ' + Initiate Active Cooling + Call Site Medical</span>'
-    '</div></div></div>',
-    unsafe_allow_html=True
+use_phys = st.checkbox(
+    "Use HSP only when it is more protective than WBGT policy",
+    value=True,
+    key="use_phys_override_block7"
 )
+
+if wbgt_policy_sev >= 3:
+    final_risk = "WITHDRAWAL"
+elif wbgt_policy_sev == 2:
+    final_risk = "HIGH STRAIN"
+elif wbgt_policy_sev == 1:
+    final_risk = "CAUTION"
+else:
+    final_risk = "LOW"
+
+if use_phys and (hsp is not None):
+    if hsp >= 1.30:
+        final_risk = "WITHDRAWAL"
+    elif hsp >= 1.00 and final_risk in ["LOW", "CAUTION"]:
+        final_risk = "HIGH STRAIN"
+    elif 0.80 <= hsp < 1.00 and final_risk == "LOW":
+        final_risk = "CAUTION"
+
+ss["final_risk"] = final_risk
 
 # -----------------------------
 # KPI pills
@@ -1283,6 +1341,9 @@ hsp_value_disp = f"{hsp:.2f}" if hsp is not None else "—"
 hsp_sub = f"{h_icon} {h_band}" if hsp is not None else "Baseline WBGT not available (HSP not computed)"
 hsp_foot = f"Operational cooling capacity: {mwl_op:.0f} W/m² (source: {mwl_source})" if mwl_op is not None else "Provide baseline WBGT to enable HSP."
 
+# -----------------------------
+# KPI CARDS FIRST (phone: readings appear before sticky bar)
+# -----------------------------
 st.markdown(
 f"""
 <div class="kpi-grid">
@@ -1319,35 +1380,24 @@ unsafe_allow_html=True
 )
 
 # -----------------------------
-# Override logic (conservative): policy first; HSP only if more protective
+# Sticky Supervisor Action Bar (COMPACT; NO emergency line)
 # -----------------------------
-use_phys = st.checkbox(
-    "Use HSP only when it is more protective than WBGT policy",
-    value=True,
-    key="use_phys_override_block7"
+risk_icon_map = {"LOW":"🟢","CAUTION":"🟠","HIGH STRAIN":"🔴","WITHDRAWAL":"⛔"}
+risk_icon = risk_icon_map.get(final_risk, "⚪")
+current_label = f"Current: {risk_icon} {final_risk} • {wbgt_disp}"
+
+st.markdown(
+    f'<div class="sticky-actions"><div class="sticky-row">'
+    f'<div class="current-pill">{current_label}</div>'
+    f'<div class="fake-btn">Observe / Care</div>'
+    f'<div class="fake-btn">Prevent</div>'
+    f'<div class="fake-btn">Manage</div>'
+    f'</div></div>',
+    unsafe_allow_html=True
 )
 
-if wbgt_policy_sev >= 3:
-    final_risk = "WITHDRAWAL"
-elif wbgt_policy_sev == 2:
-    final_risk = "HIGH STRAIN"
-elif wbgt_policy_sev == 1:
-    final_risk = "CAUTION"
-else:
-    final_risk = "LOW"
-
-if use_phys and (hsp is not None):
-    if hsp >= 1.30:
-        final_risk = "WITHDRAWAL"
-    elif hsp >= 1.00 and final_risk in ["LOW", "CAUTION"]:
-        final_risk = "HIGH STRAIN"
-    elif 0.80 <= hsp < 1.00 and final_risk == "LOW":
-        final_risk = "CAUTION"
-
-ss["final_risk"] = final_risk
-
 # -----------------------------
-# Consolidated risk summary  (FIXED UNITS)
+# Consolidated risk summary
 # -----------------------------
 st.markdown("### 🧾 Risk Summary (Context-Relevant Significance)")
 
@@ -1448,7 +1498,7 @@ with st.expander("🧑‍🏭 Worker Messages (Tap to Expand)", expanded=False):
 - Tell your supervisor immediately if you feel unwell, dizzy, weak, confused, or nauseated.
 """
     )
-    st.markdown("**Local languages  (Eg., Arabic / Hindi / Urdu /Spanish Etc) — Planned For Future Versions**")
+    st.markdown("**Local languages (Eg., Arabic / Hindi / Urdu / Spanish etc) — Planned For Future Versions**")
     st.info("Next Step: Adding Short, Field-Safe Translations for Key Messages.")
 
 if ss.get("debug_mode", False):
@@ -1456,7 +1506,6 @@ if ss.get("debug_mode", False):
         f"DEBUG → wbgt_policy_sev={wbgt_policy_sev} | wbgt_eff_c={float(wbgt_eff):.2f} | "
         f"hsp={(hsp if hsp is not None else -1):.2f} | final_risk={final_risk}"
     )
-
 # ======================================================================
 # BLOCK 8 — AUDIT LOG & EXPORT
 # ======================================================================
@@ -1726,51 +1775,26 @@ and heat stroke, emphasizing neurologic red-flag symptoms.*
 st.markdown("<div style='height:72px;'></div>", unsafe_allow_html=True)
  
 # ======================================================================
-# FIXED PROFESSIONAL FOOTER — OWNERSHIP + PUBLIC USE + FEEDBACK
+# FOOTER (COLLAPSIBLE) — OWNERSHIP + PUBLIC USE + FEEDBACK  [MOBILE SAFE]
 # ======================================================================
-st.markdown(f"""
-<style>
-.footer {{
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(15, 18, 22, 0.94);
-    color: #ddd;
-    text-align: center;
-    padding: 4px 8px;
-    font-size: 11px;
-    line-height: 1.2;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    z-index: 9999;
-}}
-.footer a {{
-    color: #9fd3ff;
-    text-decoration: none;
-}}
-.footer a:hover {{
-    text-decoration: underline;
-}}
-</style>
 
-<div class="footer">
-<b>© 2026 Dr. Gummanur T. Manjunath — CHSRMT® (Calibrated Heat Stress Risk Management Tool)</b><br>
-Field Heat-Stress Decision Support System — Integrating <b>WBGT • TWL • MWL • HSP</b><br>
+st.markdown("---")
 
-<span style="opacity:0.9;">
-Free public-use decision-support tool for occupational heat-stress awareness & field screening.<br>
-Not a substitute for site HSE policy, IH judgment, medical evaluation, or regulatory compliance.
+with st.expander("ℹ About CHSRMT • Disclaimer • Feedback", expanded=False):
+    st.markdown(f"""
+**© 2026 Dr. Gummanur T. Manjunath — CHSRMT® (Calibrated Heat Stress Risk Management Tool)**
+
+Field Heat-Stress Decision Support System — Integrating **WBGT • MWL • HSP**  
+*(Instrument TWL input supported where available)*
+
+**Decision-Support Only:**  
+This tool supports occupational heat-stress awareness and field screening.  
+It does **not** replace site HSE policy, IH/OH judgement, medical evaluation, or regulatory compliance.  
 No organization or professional society endorses this tool unless explicitly stated.
-</span><br>
 
-<span style="opacity:0.9;">
-Feedback & Field Validation:
-<a href="https://forms.gle/7rfrXZXkyCdXqGVs5" target="_blank">
-https://forms.gle/7rfrXZXkyCdXqGVs5
-</a>
-&nbsp; | &nbsp; Build: {APP_VERSION}
-</span>
-</div>
-""", unsafe_allow_html=True)
+**Feedback & Field Validation:**  
+https://forms.gle/7rfrXZXkyCdXqGVs5  
 
+**Build:** `{APP_VERSION}`
+""")
 
