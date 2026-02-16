@@ -247,64 +247,67 @@ if not ss["landing_open"]:
     st.markdown("""
     <h2 style='margin-bottom:0.2rem;'>Calibrated Heat Stress Risk Management Tool (CHSRMT)</h2>
     <p style='margin-top:0; color: #555;'>
-    Field-ready decision support for occupational heat stress and heat strain
+    Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
     """, unsafe_allow_html=True)
-    
+
     st.markdown("---")
 
     st.markdown("""
     <div class="welcome-box">
-        <h2>☀️ Field Heat-Stress Assessment Dashboard</h2>
-        <p><b>WBGT</b> - Regulatory Guide For Env.Heat Hazard. <b>Heat Strain Profile(HSP)</b> - Human Cooling Ability -vs-Heat load By MWL (W/m²).</p>
-        <p><b>Workflow:</b> Inputs → Baseline WBGT → Exposure Adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</p>
+        <h2 style="margin-bottom:0.25rem;">☀️ CALIBRATED HEAT STRESS RISK MANAGEMENT TOOL (CHSRMT) - Field Heat-Stress Assessment Dashboard</h2>
+        <p style="margin-top:0.15rem;">
+          <b>WBGT</b> = Regulatory Screening / Compliance Guide For Environmental Heat Hazard.<br>
+          <b>Heat Strain Profile (HSP)</b> = Human Cooling Ability vs Heat Load Using Cooling Capacity (W/m²).
+        </p>
+        <p style="margin-bottom:0;">
+          <b>Workflow:</b> Inputs → Baseline WBGT → Exposure Adjustments → Effective WBGT → HSP → Guidance → Logging
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### What this tool does")
+    st.markdown("### What This Tool Does")
     st.markdown("""
-• Computes WBGT baseline and Effective WBGT (after PPE/enclosure/radiant adjustments)  
-• Estimates **MWL (Metabolic Work Load, W/m²)** when an instrument **TWL(Thermal Work Limits) reading** is not available  
-• Computes **HSP** before and after exposure adjustments  to reflect **Human Cooling Margin**
-
-### Definitions / Explanations
-
-• **Heat stress**: external thermal load from the environment and work conditions  
-
-• **Heat strain**: the body’s physiological response as it attempts to maintain thermal balance  
-
-• **Wet-Bulb (WB)**: reflects evaporative potential and how effectively sweat can evaporate — a true physiological limit  
-
-• **WBGT**: screening and regulatory heat-hazard index used for compliance and baseline decisions  
-
-• **TWL (Thermal Work Limits)**: instrument-measured cooling capacity of the environment  
-
-• **MWL (Metabolic Work Load, W/m²)**: modeled cooling capacity when TWL instrumentation is not available  
-  – Higher MWL → longer sustainable work duration  
-  – Lower MWL → shorter sustainable work duration  
-
-• **HSP (Heat-Strain Profile)**: heat demand relative to human cooling capacity  
-  – Lower HSP = safer  
-  – Higher HSP = reduced ability to dissipate heat  
-
-• **Acclimatization**: improves sweat-gland efficiency, cardiovascular stability, and overall heat tolerance
-
-
-**HSP interpretation (Practical):**  
-• 🟢 **HSP < 0.80** → Cooling exceeds heaload  
-• 🟠 **0.80–0.99** → Heat balance marginal  
-• 🔴 **HSP ≥ 1.00** → Heat gain exceeds heat loss  
-
-• Provides supervisor guidance + audit logging  
+- Computes **Baseline WBGT** and **Effective WBGT** (After Clothing/PPE, Vehicle/Enclosure, Radiant/Hot Surfaces, And Ad-Hoc Adjustments)
+- Uses **Instrument TWL (W/m²)Readings** *if available* (sites with TWL instruments can enter the reading)
+- Estimates **MWL (W/m²)** when an instrument TWL reading is not available
+- Computes **HSP** (Heat-Strain Profile) to express **Human Cooling Margin** under current conditions
+- Provides **Supervisor Guidance** and maintains an **Audit Log**
 """)
 
-    st.warning("Decision-Support only. Does Not Replace Site HSE policy, IH judgement, or Medical Protocols.")
+    # Collapsible definitions / explanations (compact welcome screen)
+    with st.expander("📘 Definitions & Explanations (tap to expand)", expanded=False):
+        st.markdown("""
+**Core terms**
+- **Heat Stress**: External Thermal Load from the environment and work conditions
+- **Heat Strain**: The Body’s Physiological Response while trying to maintain thermal balance
+- **Wet-Bulb (WB)**: Reflects Evaporative Potential and how effectively sweat can evaporate (a key physiological limiter)
+- **WBGT**: Screening / Regulatory Heat-Hazard Index used for compliance and baseline decisions
+- **TWL (Thermal Work Limit)**: Instrument-Measured cooling capacity of the environment (W/m²)
+- **MWL (W/m²)**: Modeled Cooling Capacity when TWL instrumentation is not available  
+  – Higher MWL → Longer Sustainable Work Duration  
+  – Lower MWL → Shorter Sustainable Work Duration
+- **HSP (Heat-Strain Profile)**: Heat Demand Relative To Human Cooling Capacity  
+  – Lower HSP = Safer  
+  – Higher HSP = Reduced Ability To Dissipate Heat
+- **Acclimatization**: Improves Sweat Efficiency, Cardiovascular Stability, And Overall Heat Tolerance
 
-    if st.button("🚀 Start Heat-Stress Assessment"):
+**HSP interpretation (practical)**
+- 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  
+- 🟠 **0.80–0.99** → Heat Balance Marginal  
+- 🔴 **HSP ≥ 1.00** → Heat Gain Likely Exceeds Heat Loss
+""")
+
+    st.warning("Decision-Support Only. Does Not Replace Site HSE Policy, IH / OH Judgement, Or Medical Protocols.")
+
+    # Make the start action prominent and near the bottom (but not buried)
+    st.markdown("---")
+    if st.button("🚀 Start Heat-Stress Assessment", type="primary", use_container_width=True):
         ss["landing_open"] = True
         st.rerun()
 
     st.stop()
+
 
 # ----------------------------
 # Working page header
@@ -312,7 +315,7 @@ if not ss["landing_open"]:
 st.markdown("""
 <h2 style='margin-bottom:0.2rem;'>Calibrated Heat Stress Risk Management Tool (CHSRMT)</h2>
 <p style='margin-top:0; color: #555;'>
-Field-ready decision support for occupational heat stress and heat strain
+CHSRMT - Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
 </p>
 """, unsafe_allow_html=True)
 
@@ -344,21 +347,21 @@ st.markdown("""
 • Environmental HSP (before PPE/enclosure)  
 • Operational HSP (after exposure adjustments)  
 
-Higher HSP = **Better Cooling Margin**.
+Lower HSP = **Better Cooling Margin**.
 """)
 
 # -------------------------
-# Reset assessment (main page, confirmed)
+# Reset Assessment (main page, confirmed)
 # -------------------------
 st.markdown("---")
-if st.button("🔄 Reset assessment (clear current inputs & results)"):
+if st.button("🔄 Reset Assessment (Clear Current Inputs & Results)"):
     ss["confirm_reset"] = True
 
 if ss.get("confirm_reset", False):
     st.warning("Are you sure you want to reset the current assessment? Please save or export current results before resetting.")
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("✅ Yes, reset now"):
+        if st.button("✅ Yes, Reset Now"):
             keys_to_clear = [
                 # Location / weather
                 "city_query","place_name","lat","lon","weather_fetched","weather_provider",
@@ -405,7 +408,7 @@ with st.sidebar:
     st.success("Metric (°C, m/s, kPa)" if units_now == "metric"
                else "Imperial (°F, mph, inHg)")
 
-    st.caption("Change units from the main screen (mobile-safe).")
+    st.caption("Change Units From The Main Screen (Mobile-Safe).")
 
     st.markdown("---")
 
@@ -430,9 +433,9 @@ with st.sidebar:
     C = ss.get("thr_C_c", 35.0)
 
     st.markdown("**WBGT Risk Band Reference**")
-    st.write(f"🟢 Low Risk: < {fmt_temp(A, ss['band_units'])}")
-    st.write(f"🟠 Caution: {fmt_temp(A, ss['band_units'])} – {fmt_temp(B, ss['band_units'])}")
-    st.write(f"🔴 Withdrawal: ≥ {fmt_temp(C, ss['band_units'])}")
+    st.write(f"🟢 LOW RISK: < {fmt_temp(A, ss['band_units'])}")
+    st.write(f"🟠 CAUTION: {fmt_temp(A, ss['band_units'])} – {fmt_temp(B, ss['band_units'])}")
+    st.write(f"🔴 WITHDRAWAL: ≥ {fmt_temp(C, ss['band_units'])}")
 
     st.markdown("---")
     
@@ -613,12 +616,12 @@ with col5:
 ss["env_dirty"] = True
 
 st.markdown(
-    "<span style='color:#444;'>If you entered weather manually, adjust Globe Temperature to reflect sun and radiant load.</span>",
+    "<span style='color:#444;'>If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load.</span>",
     unsafe_allow_html=True
 )
 
 # st.caption(
-  #  "If you entered weather manually, adjust Globe Temperature to reflect sun and radiant load."
+  #  "If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load."
 # )
 # ======================================================================
 # BLOCK 5 — COMPUTE NATURAL WET-BULB + WBGT BASELINE (with frozen baseline)
@@ -707,13 +710,13 @@ with st.expander("🧮 Baseline WBGT Calculation (Before exposure adjustments)",
 # ======================================================================
 
 st.markdown(
-    "<span style='color:#444;'>Optional: enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
+    "<span style='color:#444;'>Optional: Enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
     unsafe_allow_html=True
 )
 
 # st.markdown("### 📟 Instrument Reference (Calibration Mode)")
 # st.caption(
-  #  "Optional: enter instrument values to display Heat Strain Profile (HSP). "
+  #  "Optional: Enter instrument values to display Heat Strain Profile (HSP). "
    # "These values do NOT affect WBGT baseline or exposure adjustments."
 # )
 
@@ -814,9 +817,9 @@ with col4:
 # BLOCK 5B — APPLY PENALTIES SAFELY (unit-aware, clamped, no negatives)
 # ======================================================================
 
-st.markdown("## 🚀 Apply exposure adjustments & compute Effective WBGT")
+st.markdown("## 🚀 Apply Exposure Adjustments & Compute Effective WBGT")
 
-if st.button("Apply adjustments & compute"):
+if st.button("Apply Adjustments & Compute"):
 
     wbgt_base_c = ss.get("wbgt_base_frozen", None)  # use frozen baseline
     if wbgt_base_c is None:
@@ -856,7 +859,7 @@ if st.button("Apply adjustments & compute"):
             penalty_str = f"+{total_penalty_c:.1f} °C"
 
         st.success(
-            f"Exposure adjustments applied ({penalty_str}) → Effective WBGT = {fmt_temp(wbgt_eff_c, ss['units'])}. "
+            f"Exposure Adjustments Applied ({penalty_str}) → Effective WBGT = {fmt_temp(wbgt_eff_c, ss['units'])}. "
             "Scroll down for Heat-Stress Classification."
         )
 
@@ -924,63 +927,206 @@ with st.expander("🎯 Heat-Stress Thresholds (NIOSH / OSHA Reference)", expande
     st.markdown("**Wet-Bulb Physiological Limits**")
     colW1, colW2, colW3 = st.columns(3)
     with colW1:
-        st.metric("WB – Sweat evaporation effective", fmt_temp(ss["wb_safe_c"], ss["units"]))
+        st.metric("WB – Sweat Evaporation Effective", fmt_temp(ss["wb_safe_c"], ss["units"]))
     with colW2:
-        st.metric("WB – Rising strain", fmt_temp(ss["wb_strain_c"], ss["units"]))
+        st.metric("WB – Rising Strain", fmt_temp(ss["wb_strain_c"], ss["units"]))
     with colW3:
-        st.metric("WB – Evaporation ceiling", fmt_temp(ss["wb_danger_c"], ss["units"]))
+        st.metric("WB – Evaporation Ceiling", fmt_temp(ss["wb_danger_c"], ss["units"]))
 
     if accl_status == "Acclimatized":
         st.caption(
-            "Values approximate **NIOSH/OSHA WBGT guidance** and **physiological wet-bulb limits** "
+            "Values approximate **NIOSH/OSHA WBGT guidance** and **Physiological Wet-bulb limits** "
             "for acclimatized industrial workers."
         )
     else:
         st.caption(
-            "All WBGT and Wet-Bulb thresholds are shifted lower for **non-acclimatized** workers "
+            "All WBGT and Wet-Bulb thresholds are shifted lower for **Non-Acclimatized** workers "
             "to provide a conservative safety margin."
         )
-
 # ======================================================================
-# BLOCK 7 — WBGT RISK CLASSIFICATION + HEAT STRAIN PROFILE (HSP)
+# BLOCK 7 — HEAT STRESS RISK CLASSIFICATION (WBGT policy + HSP + Wet-Bulb)
+# Single-screen compact dashboard + Sticky actions (HTML-only; no ghosting)
+# + Compact 2×2 Supervisor Actions grid (phone friendly)
 # ======================================================================
-
 ss = st.session_state
 
-st.markdown("## 🧭 Heat-Stress Classification & Worker Guidance")
+# ---------- Compact CSS (safe) ----------
+st.markdown("""
+<style>
+/* tighten vertical whitespace */
+div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
+[data-testid="stVerticalBlock"] { gap: 0.55rem; }
+[data-testid="stMarkdownContainer"] p { margin-bottom: 0.35rem; }
 
-# ------------------------------------------------------------------
-# WBGT policy banding
-# ------------------------------------------------------------------
+/* =========================
+   STICKY ACTION BAR (DASHBOARD)
+   ========================= */
+.sticky-actions{
+  position: sticky;
+  top: 0.25rem;
+  z-index: 999999;
+  padding: 0.60rem 0.85rem;
+  border-radius: 16px;
+
+  /* fully opaque pleasant blue (no ghosting) */
+  background: linear-gradient(90deg, rgba(16,78,140,1.0), rgba(34,130,190,1.0)) !important;
+
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.sticky-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+/* Observe / Prevent / Manage pills */
+.fake-btn{
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.92);
+  font-weight: 850;
+  font-size: 0.92rem;
+  user-select: none;
+  letter-spacing: 0.2px;
+}
+
+/* Emergency container — left aligned */
+.emergency{
+  margin-left: 12px;
+  color: rgba(255,255,255,0.95);
+  font-size: 0.95rem;
+  line-height: 1.15;
+  flex: 1 1 420px;
+  text-align: left;
+}
+
+/* "Emergency rule:" label — slightly lighter */
+.emergency-label{
+  font-weight: 600;     /* lighter than STOP */
+  opacity: 0.9;
+  margin-right: 6px;
+}
+
+/* Emergency text wrapper */
+.emergency-text{ opacity: 0.95; }
+
+/* STOP emphasis — strong */
+.emergency-stop{
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.15);
+}
+
+/* Mobile adjustment */
+@media (max-width: 900px){
+  .emergency{
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+
+/* KPI cards */
+.kpi-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.6rem; }
+@media (max-width: 1100px){ .kpi-grid{ grid-template-columns: 1fr; } }
+
+.kpi-card{
+  padding: 10px;
+  border-radius: 12px;
+  background:#ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.kpi-label{ font-size:0.86rem; color:#4a4a4a; margin-bottom:2px; }
+.kpi-value{ font-size:1.55rem; font-weight:850; line-height:1.05; color:#0b2239; }
+.kpi-sub{ margin-top:6px; font-size:0.93rem; line-height:1.15; color:#222; }
+.kpi-foot{ margin-top:6px; font-size:0.90rem; color:#555; line-height:1.25; }
+
+/* Risk pills */
+.pill{
+  display:inline-block;
+  padding:0.18rem 0.55rem;
+  border-radius:999px;
+  font-size:0.78rem;
+  font-weight:850;
+  border:1px solid rgba(0,0,0,0.10);
+}
+.pill-green{ background: rgba(0,255,0,0.10); }
+.pill-amber{ background: rgba(255,170,0,0.14); }
+.pill-red{ background: rgba(255,0,0,0.12); }
+.pill-withdrawal{ background: rgba(142,0,0,0.14); border-color: rgba(142,0,0,0.25); color:#5a0000; }
+
+/* Supervisor Actions grid (compact, phone friendly) */
+.sa-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+@media (max-width: 900px){
+  .sa-grid{ grid-template-columns: 1fr; }
+}
+.sa-card{
+  padding: 10px;
+  border-radius: 12px;
+  background:#ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.sa-title{
+  font-weight: 900;
+  font-size: 0.98rem;
+  margin-bottom: 6px;
+  color: #0b2239;
+}
+.sa-card ul{
+  margin: 0.25rem 0 0 1.15rem;
+}
+.sa-card li{
+  margin-bottom: 0.25rem;
+  line-height: 1.25;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("## 🧭 Heat-Stress Snapshot (WBGT Policy + HSP + Wet-Bulb)")
+
+# -----------------------------
+# WBGT policy banding (4-level)
+# -----------------------------
 def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
     if wbgt_eff_c < A:
-        return ("🟢", "LOW RISK", "Normal work acceptable. Maintain hydration and routine supervision.", 0, "#2ecc71")
+        return ("🟢", "LOW RISK", "Routine/Normal work acceptable. Maintain hydration and routine supervision.", 0, "#2ecc71")
     if wbgt_eff_c < B:
         return ("🟠", "CAUTION", "Increase supervision. Enforce hydration and basic work–rest cycles.", 1, "#f39c12")
     if wbgt_eff_c < C:
-        return ("🔴", "HIGH STRAIN", "Reduce  exposure; move workers to cooler shaded areas; cool  using ventilation/climate control where available; encourage drinking cool water. Use short work–rest cycles.", 2, "#e74c3c")
-    return ("🚫", "WITHDRAWAL", "Stop routine work. Only emergency tasks with medical monitoring.", 3, "#7f0000")
+        return ("🔴", "HIGH STRAIN", "Reduce exposure; Move to cooler/shaded areas; Use ventilation/A/C; Enforce short work–rest cycles.", 2, "#e74c3c")
+    return ("⛔", "WITHDRAWAL", "Stop routine work. Only essential tasks with strict limits and close monitoring.", 3, "#8e0000")
 
-# ------------------------------------------------------------------
-# Inputs
-# ------------------------------------------------------------------
-wbgt_eff  = ss.get("wbgt_eff_c")
-wbgt_base = ss.get("wbgt_base_frozen")
+wbgt_eff = ss.get("wbgt_eff_c", None)
+wbgt_base = ss.get("wbgt_base_frozen", None)
 
 if wbgt_eff is None:
-    st.info("Press **Apply adjustments & compute** to calculate WBGT and heat strain.")
+    st.info("Press **Apply Adjustments & Compute** to calculate Effective WBGT, HSP, and guidance.")
     st.stop()
 
 A = float(ss.get("thr_A_c", 29))
 B = float(ss.get("thr_B_c", 32))
 C = float(ss.get("thr_C_c", 35))
 
-icon, band, msg, wbgt_sev, band_color = _wbgt_band_from_eff(float(wbgt_eff), A, B, C)
-ss["risk_band"] = band
+icon, wbgt_policy_band, wbgt_policy_msg, wbgt_policy_sev, band_color = _wbgt_band_from_eff(float(wbgt_eff), A, B, C)
 
-# ------------------------------------------------------------------
-# Wet-bulb lookup (Primary truth = natural wet-bulb computed in Block-5)
-# ------------------------------------------------------------------
+# Keep legacy session keys if other blocks expect them
+ss["risk_band"] = wbgt_policy_band
+ss["wbgt_sev"] = wbgt_policy_sev
+
+# -----------------------------
+# Wet-bulb lookup + thresholds
+# -----------------------------
 def _get_wb_info_c():
     for k in ("twb_c", "wb_interp_c", "wb_c", "wb_calc_c", "wb_derived_c", "wetbulb_c"):
         v = ss.get(k, None)
@@ -995,357 +1141,443 @@ def _get_wb_info_c():
 wb_info_c = _get_wb_info_c()
 pen_c = float(ss.get("total_penalty_c", 0.0))
 
-# ------------------------------------------------------------------
-# Wet-bulb thresholds from Block-6 (fallback to defaults if missing)
-# ------------------------------------------------------------------
 wb_safe_c   = float(ss.get("wb_safe_c", 26.0))
 wb_strain_c = float(ss.get("wb_strain_c", 28.0))
 wb_danger_c = float(ss.get("wb_danger_c", 30.0))
 
-# Units display helpers
 units_mode = ss.get("units", "metric")
+
+def _c_to_f(x):
+    return (x * 9/5 + 32)
+
 if units_mode == "imperial":
-    wbgt_disp = f"{(float(wbgt_eff) * 9/5 + 32):.1f} °F"
-    pen_disp  = f"+{(pen_c * 9/5):.1f} °F"
-    wb_disp   = f"{(wb_info_c * 9/5 + 32):.1f} °F" if wb_info_c is not None else "—"
-    wb_thr_disp = f"{(wb_safe_c*9/5+32):.0f} / {(wb_strain_c*9/5+32):.0f} / {(wb_danger_c*9/5+32):.0f} °F"
+    wbgt_disp = f"{_c_to_f(float(wbgt_eff)):.1f} °F"
+    pen_disp  = f"+{(pen_c * 9/5):.1f} °F"  # delta °C → delta °F
+    wb_disp   = f"{_c_to_f(wb_info_c):.1f} °F" if wb_info_c is not None else "—"
+    wb1 = f"{_c_to_f(wb_safe_c):.0f} °F"
+    wb2 = f"{_c_to_f(wb_strain_c):.0f} °F"
+    wb3 = f"{_c_to_f(wb_danger_c):.0f} °F"
 else:
     wbgt_disp = f"{float(wbgt_eff):.1f} °C"
     pen_disp  = f"+{pen_c:.1f} °C"
     wb_disp   = f"{wb_info_c:.1f} °C" if wb_info_c is not None else "—"
-    wb_thr_disp = f"{wb_safe_c:.0f} / {wb_strain_c:.0f} / {wb_danger_c:.0f} °C"
-
-
-# Display strings for WB physiology band edges (for card)
-if units_mode == "imperial":
-    wb1 = f"{(wb_safe_c*9/5+32):.0f} °F"
-    wb2 = f"{(wb_strain_c*9/5+32):.0f} °F"
-    wb3 = f"{(wb_danger_c*9/5+32):.0f} °F"
-else:
     wb1 = f"{wb_safe_c:.0f} °C"
     wb2 = f"{wb_strain_c:.0f} °C"
     wb3 = f"{wb_danger_c:.0f} °C"
-# ------------------------------------------------------------------
-# Wet-bulb physiological meaning (uses thresholds)
-# ------------------------------------------------------------------
-wb_msg = "Wet-bulb not available"
-wb_color = "#666"
+
+# -----------------------------
+# Wet-Bulb Cooling Bands (4-level)
+# -----------------------------
+wb_phys_msg = "Wet-bulb not available"
+wb_phys_color = "#666"
+wb_phys_icon = "⚪"
 
 if wb_info_c is not None:
     if wb_info_c < wb_safe_c:
-        wb_msg   = "🟢 Body Heat dissipation effective"
-        wb_color = "#2ecc71"
+        wb_phys_icon, wb_phys_msg, wb_phys_color = "🟢", "Cooling Effective", "#2ecc71"
     elif wb_info_c < wb_strain_c:
-        wb_msg   = "🟡 Body Heat dissipation becoming limited"
-        wb_color = "#f1c40f"
+        wb_phys_icon, wb_phys_msg, wb_phys_color = "🟡", "Cooling Starting to Limit", "#f1c40f"
     elif wb_info_c < wb_danger_c:
-        wb_msg   = "🟠 Body Cooling inadequate / insufficient"
-        wb_color = "#f39c12"
+        wb_phys_icon, wb_phys_msg, wb_phys_color = "🟠", "Cooling Limited", "#f39c12"
     else:
-        wb_msg   = "🔴 Body Heat dissipation compromised"
-        wb_color = "#e74c3c"
+        wb_phys_icon, wb_phys_msg, wb_phys_color = "🔴", "Cooling Compromised", "#e74c3c"
 
-# ------------------------------------------------------------------
-# WBGT Display Card (with WB thresholds)
-# ------------------------------------------------------------------
-subtle_divider()
-st.markdown(
-f"""
-<div style="padding:16px;border-radius:14px;background:#eef4fb;border-left:8px solid {band_color};">
-  <b style="font-size:28px;color:#0b2239;">Effective WBGT  {wbgt_disp}</b><br>
-  <span style="color:#444;">Exposure adjustments:</span> <b>{pen_disp}</b><br>
-  <span style="color:#444;">Wet-bulb:</span> <b>{wb_disp}</b><br>
-  <div style="margin-top:6px;font-size:0.92rem;line-height:1.25;">
-    <span style="color:#2ecc71;font-weight:700;">🟢 {wb1} to {wb2}</span> <span style="color:#555;">→ Heat dissipation effective</span><br>
-    <span style="color:#f1c40f;font-weight:700;">🟡 {wb2} to {wb3}</span> <span style="color:#555;">→ Heat dissipation becoming limited</span><br>
-    <span style="color:#e74c3c;font-weight:700;">🔴 ≥ {wb3}</span> <span style="color:#555;">→ Heat dissipation compromised</span>
-  </div><br>
-  <span style="font-weight:700;color:{wb_color};">{wb_msg}</span><br><br>
-  <b style="font-size:20px;color:{band_color};">{icon} {band}</b><br>
-  <span style="color:#222;">{msg}</span>
-</div>
-""", unsafe_allow_html=True
-)
+# -----------------------------
+# HSP (Cooling Capacity)
+# -----------------------------
+hsp = None
+h_icon = "⚪"
+h_band = "HSP not available"
+h_color = "#666"
 
-# =====================================================================
-# HSP — HUMAN COOLING CAPACITY
-# =====================================================================
+db = float(ss.get("db_c", 0) or 0)
+rh = float(ss.get("rh_pct", 0) or 0)
+ws = float(ss.get("ws_ms", 0) or 0)
+gt = float(ss.get("gt_c", 0) or 0)
 
-subtle_divider()
-st.markdown("### 🧬 Heat-Strain Profile (HSP) — Body's ability to lose heat & cope")
-
-if not wbgt_base:
-    st.info("Baseline WBGT not available.")
-    st.stop()
-
-db = float(ss.get("db_c", 0))
-rh = float(ss.get("rh_pct", 0))
-ws = float(ss.get("ws_ms", 0))
-gt = float(ss.get("gt_c", 0))
-wbgt_env = float(wbgt_base)
+wbgt_env = None if wbgt_base is None else float(wbgt_base)
 wbgt_op  = float(wbgt_eff)
 
-inst_twl = float(ss.get("twl_measured", 0))
-if inst_twl > 0:
-    mwl_raw = inst_twl
-    mwl_source = "Instrument TWL"
-else:
-    mwl_raw = float(estimate_mwl_wm2(db_c=db, rh_pct=rh, ws_ms=ws, gt_c=gt, wbgt_c=wbgt_env))
-    mwl_source = "Model"
+mwl_env = None
+mwl_op = None
+mwl_source = "—"
+mwl_cap = None
 
-# --- physiological caps ---
-if gt >= 50 and ws < 0.5:
-    mwl_cap = 115
-elif gt >= 45:
-    mwl_cap = 140
-elif wbgt_env >= 33:
-    mwl_cap = 170
-elif wbgt_env >= 30:
-    mwl_cap = 220
-else:
-    mwl_cap = 280
+if wbgt_env is not None:
+    inst_cap = float(ss.get("twl_measured", 0) or 0)
+    if inst_cap > 0:
+        mwl_raw = inst_cap
+        mwl_source = "Instrument capacity input"
+    else:
+        mwl_raw = float(estimate_mwl_wm2(db_c=db, rh_pct=rh, ws_ms=ws, gt_c=gt, wbgt_c=wbgt_env))
+        mwl_source = "Model"
 
-env_sig = (round(db,2),round(rh,2),round(ws,2),round(gt,2),round(wbgt_env,2),round(pen_c,2))
-if ss.get("mwl_env_sig") != env_sig:
-    ss["mwl_env_sig"] = env_sig
-    ss.pop("mwl_env_prev", None)
+    if gt >= 50 and ws < 0.5:
+        mwl_cap = 115
+    elif gt >= 45:
+        mwl_cap = 140
+    elif wbgt_env >= 33:
+        mwl_cap = 170
+    elif wbgt_env >= 30:
+        mwl_cap = 220
+    else:
+        mwl_cap = 280
 
-prev_mwl = ss.get("mwl_env_prev", 9999.0)
-mwl_env = min(mwl_raw, mwl_cap, prev_mwl)
-ss["mwl_env_prev"] = mwl_env
+    env_sig = (round(db,2), round(rh,2), round(ws,2), round(gt,2), round(wbgt_env,2), round(pen_c,2))
+    if ss.get("mwl_env_sig") != env_sig:
+        ss["mwl_env_sig"] = env_sig
+        ss.pop("mwl_env_prev", None)
 
-mwl_op = float(apply_capacity_penalties(
-    mwl_env,
-    ppe_c=float(ss.get("pen_clo_c",0)),
-    veh_c=float(ss.get("pen_veh_c",0)),
-    rad_c=float(ss.get("pen_rad_c",0)),
-    adh_c=float(ss.get("pen_adhoc_c",0)),
-))
+    prev_mwl = float(ss.get("mwl_env_prev", 9999.0))
+    mwl_env = min(float(mwl_raw), float(mwl_cap), float(prev_mwl))
+    ss["mwl_env_prev"] = mwl_env
 
-hsp = (wbgt_op * 200.0) / (max(1.0, mwl_op) * 30.0)
+    mwl_op = float(apply_capacity_penalties(
+        mwl_env,
+        ppe_c=float(ss.get("pen_clo_c", 0) or 0),
+        veh_c=float(ss.get("pen_veh_c", 0) or 0),
+        rad_c=float(ss.get("pen_rad_c", 0) or 0),
+        adh_c=float(ss.get("pen_adhoc_c", 0) or 0),
+    ))
 
-# Interpretation
-if hsp < 0.8:
-    h_icon = "🟢"; h_band="Cooling Exceeds Heat Load"; h_color="#2ecc71"
-elif hsp < 1.0:
-    h_icon = "🟠"; h_band="Heat Balance Marginal"; h_color="#f39c12"
-else:
-    h_icon = "🔴"; h_band="Heat Gain Exceeds Heat Loss"; h_color="#e74c3c"
+    hsp = (wbgt_op * 200.0) / (max(1.0, mwl_op) * 30.0)
+    ss["hsp"] = hsp
 
-# HSP Card (field-friendly)
+    if hsp < 0.8:
+        h_icon, h_band, h_color = "🟢", "Cooling Exceeds Heat Load", "#2ecc71"
+    elif hsp < 1.0:
+        h_icon, h_band, h_color = "🟠", "Heat Balance Marginal", "#f39c12"
+    else:
+        h_icon, h_band, h_color = "🔴", "Heat Gain Likely Exceeds Cooling Capacity", "#e74c3c"
+
+# -----------------------------
+# Sticky Supervisor Action Bar (HTML-only)
+# -----------------------------
 st.markdown(
-f"""
-<div style="padding:14px;border-radius:12px;background:#ffffff;border-left:8px solid {h_color};">
-  <b style="font-size:18px;color:{h_color};">{h_icon} {h_band}</b><br>
-  <span style="color:#222;">HSP (Heat Demand ÷ Cooling Ability): <b>{hsp:.2f}</b></span><br>
-  <span style="color:#666;font-size:0.92rem;">Wet-bulb influences sweat evaporation — HSP helps show whether human cooling can keep up.</span>
-</div>
-""", unsafe_allow_html=True
+    '<div class="sticky-actions"><div class="sticky-row">'
+    '<div class="fake-btn">Observe / Care</div>'
+    '<div class="fake-btn">Prevent</div>'
+    '<div class="fake-btn">Manage</div>'
+    '<div class="emergency">'
+    '<span class="emergency-label">Emergency rule:</span>'
+    '<span class="emergency-text">Confusion / Collapse / Seizure → '
+    '<span class="emergency-stop">STOP WORK IMMEDIATELY</span>'
+    ' + Initiate Active Cooling + Call Site Medical</span>'
+    '</div></div></div>',
+    unsafe_allow_html=True
 )
 
-with st.expander("ℹ️ HSP Interpretation (Quick Field Guide)", expanded=False):
-    st.markdown(f"""
-**What is  HSP?**
-HSP compares **Heat Demand** against **Human Cooling Capacity** (MWL).
-
-**How to read HSP**
-- 🟢 **HSP < 0.80** → Cooling exceeds Heat load (Generally safe with routine vigilance)
-- 🟠 **0.80–0.99** → Heat Balance is marginal (Small increases in Heat/PPE/Workload can push into danger)
-- 🔴 **HSP ≥ 1.00** → Heat Gain likely exceeds Heat loss (Remove Worker From  Heat Exposure or Apply Active Cooling)
-
-**How to use with WBGT**
-WBGT is a **Policy/Screening Index**.  
-HSP is a **Human Capacity / Strain Indicator**.  
-When they disagree, follow the **More Protective** Outcome.
-
-**Current reading**
-- HSP: **{hsp:.2f}** → **{h_band}**
-""")
-
-
-with st.expander("Show MWL / Cooling Capacity Details", expanded=False):
-    st.markdown(
-        f"""<div style="padding:12px;border-radius:10px;background:#f7f7f7;">
-        Cooling capacity (MWL, environmental): <b>{mwl_env:.0f} W/m²</b><br>
-        Cooling capacity (MWL, operational): <b>{mwl_op:.0f} W/m²</b><br>
-        MWL source: <b>{mwl_source}</b> | MWL cap applied: <b>{mwl_cap:.0f} W/m²</b>
-        </div>""", unsafe_allow_html=True
-    )
-
-
-# Bottom warnings
-if hsp >= 1.0:
-    st.error("⛔ **Likely heat gain exceeds heat loss — workers must be removed or actively cooled.**")
-elif hsp >= 0.8:
-    st.warning("⚠ **Heat balance marginal — small increases in heat, PPE or workload may cause heat storage.**")
+# -----------------------------
+# KPI pills
+# -----------------------------
+if wbgt_policy_sev <= 0:
+    pill = ""
+elif wbgt_policy_sev == 1:
+    pill = '<span class="pill pill-amber">CAUTION</span>'
+elif wbgt_policy_sev == 2:
+    pill = '<span class="pill pill-red">HIGH STRAIN</span>'
 else:
-    st.success("✅ **Cooling is adequate.**")
+    pill = '<span class="pill pill-withdrawal">WITHDRAWAL</span>'
 
-# Policy override
-st.markdown("### ⚖ Workplace Policy (WBGT) vs Human Ability to Withstand Heat (HSP)")
-use_phys = st.checkbox("Determine work continuity based on HSP when more protective than WBGT", value=True)
-if use_phys and (hsp >= 1.0 or wbgt_sev < 2):
-    st.warning("Human heat-tolerance capacity (HSP) indicates greater danger than WBGT alone, suggesting increased protection is required.")
-# ------------------------------------------------------------------
-# FINAL RISK RESOLUTION (WBGT + HSP, conservative)
-# ------------------------------------------------------------------
+hsp_value_disp = f"{hsp:.2f}" if hsp is not None else "—"
+hsp_sub = f"{h_icon} {h_band}" if hsp is not None else "Baseline WBGT not available (HSP not computed)"
+hsp_foot = f"Operational cooling capacity: {mwl_op:.0f} W/m² (source: {mwl_source})" if mwl_op is not None else "Provide baseline WBGT to enable HSP."
 
-# Start with WBGT-derived band
-final_risk = ss.get("risk_band", "LOW")
+st.markdown(
+f"""
+<div class="kpi-grid">
 
-# Normalize wording (safety)
-final_risk = final_risk.upper()
+  <div class="kpi-card" style="border-left:7px solid {band_color};">
+    <div class="kpi-label">Effective WBGT (Policy)</div>
+    <div class="kpi-value">{wbgt_disp}</div>
+    <div class="kpi-sub">{icon} <b>{wbgt_policy_band}</b> {pill}</div>
+    <div class="kpi-foot">{wbgt_policy_msg}<br>Exposure adjustments: <b>{pen_disp}</b></div>
+  </div>
 
-# Physiological override (HSP more protective than WBGT)
-if use_phys:
+  <div class="kpi-card" style="border-left:7px solid {h_color};">
+    <div class="kpi-label">Heat-Strain Profile (HSP)</div>
+    <div class="kpi-value">{hsp_value_disp}</div>
+    <div class="kpi-sub"><b>{hsp_sub}</b></div>
+    <div class="kpi-foot">{hsp_foot}</div>
+  </div>
+
+  <div class="kpi-card" style="border-left:7px solid {wb_phys_color};">
+    <div class="kpi-label">Wet-Bulb (Evaporation Capacity)</div>
+    <div class="kpi-value">{wb_disp}</div>
+    <div class="kpi-sub"><b>{wb_phys_icon} {wb_phys_msg}</b></div>
+    <div class="kpi-foot">
+      🟢 Cooling Effective (WB &lt; {wb1})<br>
+      🟡 Cooling Starting to Limit ({wb1}–{wb2})<br>
+      🟠 Cooling Limited ({wb2}–{wb3})<br>
+      🔴 Cooling Compromised (≥ {wb3})
+    </div>
+  </div>
+
+</div>
+""",
+unsafe_allow_html=True
+)
+
+# -----------------------------
+# Override logic (conservative): policy first; HSP only if more protective
+# -----------------------------
+use_phys = st.checkbox(
+    "Use HSP only when it is more protective than WBGT policy",
+    value=True,
+    key="use_phys_override_block7"
+)
+
+if wbgt_policy_sev >= 3:
+    final_risk = "WITHDRAWAL"
+elif wbgt_policy_sev == 2:
+    final_risk = "HIGH STRAIN"
+elif wbgt_policy_sev == 1:
+    final_risk = "CAUTION"
+else:
+    final_risk = "LOW"
+
+if use_phys and (hsp is not None):
     if hsp >= 1.30:
         final_risk = "WITHDRAWAL"
-    elif hsp >= 1.00:
+    elif hsp >= 1.00 and final_risk in ["LOW", "CAUTION"]:
         final_risk = "HIGH STRAIN"
-    elif hsp >= 0.80 and final_risk == "LOW":
+    elif 0.80 <= hsp < 1.00 and final_risk == "LOW":
         final_risk = "CAUTION"
 
-# Store for logging / downstream use
 ss["final_risk"] = final_risk
 
-st.markdown("### 🧭 Worker Guidance (Field Actions)")
+# -----------------------------
+# Consolidated risk summary  (FIXED UNITS)
+# -----------------------------
+st.markdown("### 🧾 Risk Summary (Context-Relevant Significance)")
 
 if final_risk == "LOW":
-    st.success(
-        "✅ **Normal work acceptable**\n\n"
-        "• Maintain hydration (cool water, regular intake)\n"
-        "• Routine supervision\n"
-        "• Continue work with standard rest breaks"
-    )
+    r_icon, r_label, r_color = "🟢", "LOW (Routine Controls)", "#2ecc71"
+elif final_risk == "CAUTION":
+    r_icon, r_label, r_color = "🟠", "CAUTION (More Breaks and Monitoring)", "#f39c12"
+elif final_risk == "HIGH STRAIN":
+    r_icon, r_label, r_color = "🔴", "HIGH STRAIN (Active Controls Required)", "#e74c3c"
+else:
+    r_icon, r_label, r_color = "⛔", "WITHDRAWAL (Stop Routine Work)", "#8e0000"
+
+hsp_show = f"{hsp:.2f}" if hsp is not None else "—"
+
+st.markdown(
+    f"""
+<div style="padding:10px;border-radius:12px;background:#ffffff;border-left:7px solid {r_color};border:1px solid rgba(0,0,0,0.06);">
+  <b style="font-size:16px;color:{r_color};line-height:1.15;">{r_icon} {r_label}</b><br>
+  <span style="color:#222;">Effective WBGT: <b>{wbgt_disp}</b></span><br>
+  <span style="color:#222;">HSP: <b>{hsp_show}</b></span><br>
+  <span style="color:#666;font-size:0.92rem;line-height:1.15;">
+    Use WBGT for policy alignment. Use HSP as a cooling-capacity cross-check when it is more protective.
+  </span>
+</div>
+""",
+    unsafe_allow_html=True
+)
+
+# -----------------------------
+# Supervisor Actions — compact grid (phone friendly)
+# -----------------------------
+st.markdown("### 👷‍♂️ Supervisor Actions (Cooling Capacity & Process-Relevant)")
+
+def _ul(items):
+    return "<ul>" + "".join([f"<li>{x}</li>" for x in items]) + "</ul>"
+
+if final_risk == "LOW":
+    hydration_items = ["Encourage Regular Drinking (Cool Water)", "~250 mL Every 30 minutes", "Do Not Exceed ~1.5 L/hour"]
+    workrest_items  = ["Continuous Self-paced Work acceptable", "Routine Breaks as per Site Practice"]
+    cooling_items   = ["Shade Access and Airflow where possible"]
+    monitor_items   = ["Routine Supervision; Remind Early Symptom Reporting"]
 
 elif final_risk == "CAUTION":
-    st.warning(
-        "⚠️ **Caution required**\n\n"
-        "• Increase hydration frequency\n"
-        "• Encourage shaded rest periods\n"
-        "• Monitor workers for early heat strain symptoms\n"
-        "• Adjust work pace if possible"
-    )
+    hydration_items = ["250 mL every 20–30 minutes", "If sweating heavily, 200 mL of hypotonic electrolytes every 4 hours", "Do not exceed ~1.5 L/hour"]
+    workrest_items  = ["Planned Rest Breaks in Shade/Cool area", "Reduce Peak Workload; Encourage Self-pacing"]
+    cooling_items   = ["Prioritize Shade + Airflow", "Cooling Towels if available"]
+    monitor_items   = ["Active checks (Buddy System + Supervisor)", "Extra Attention to New/Returning workers"]
 
 elif final_risk == "HIGH STRAIN":
-    st.error(
-        "🔴 **High heat strain**\n\n"
-        "• Reduce exposure immediately\n"
-        "• Move workers to shaded or cooled areas\n"
-        "• Use ventilation or cooling where available\n"
-        "• Enforce short work–rest cycles\n"
-        "• Active supervision required"
-    )
+    hydration_items = ["250–500 mL every 15–20 minutes (as tolerated)", "Electrolytes every 2 hours if sweating heavily", "Do not exceed ~1.5 L/hour"]
+    workrest_items  = ["Short Work Bouts + Frequent Cooling Breaks", "Reduce Exposure Now; Defer Non-Urgent Tasks"]
+    cooling_items   = ["Active Cooling: Fans and Wetting; Cooled Area / A/C Cabin"]
+    monitor_items   = ["Close observation", "STOP WORK IMMEDIATELY If SYMPTOMS APPEAR"]
 
-elif final_risk == "WITHDRAWAL":
-    st.error(
-        "⛔ **WITHDRAWAL**\n\n"
-        "• Stop routine work\n"
-        "• Only emergency tasks permitted\n"
-        "• Medical monitoring mandatory\n"
-        "• Active cooling required\n"
-        "• Remove workers if cooling cannot be ensured"
+else:  # WITHDRAWAL
+    hydration_items = ["Stop Routine Work; Move to Shade/Cool area", "Small Frequent Sips If Fully Alert", "Confused/Vomiting/Disoriented → No Oral Fluids; Call Site Medical"]
+    workrest_items  = ["Only Essential Tasks with Strict Time Limits", "Rotate Staff; Keep Exposures Very Short"]
+    cooling_items   = ["Immediate Active Cooling for Symptomatic Workers", "Escalate Quickly for Severe Signs"]
+    monitor_items   = ["Continuous Observation", "Emergency Trigger: Confusion/Collapse/Seizure → Activate Response"]
+
+st.markdown(
+    f"""
+<div class="sa-grid">
+  <div class="sa-card"><div class="sa-title">Hydration</div>{_ul(hydration_items)}</div>
+  <div class="sa-card"><div class="sa-title">Work–Rest</div>{_ul(workrest_items)}</div>
+  <div class="sa-card"><div class="sa-title">Cooling</div>{_ul(cooling_items)}</div>
+  <div class="sa-card"><div class="sa-title">Monitoring</div>{_ul(monitor_items)}</div>
+</div>
+""",
+    unsafe_allow_html=True
+)
+
+with st.expander("ℹ️ HSP Details (Tap to Expand)", expanded=False):
+    st.markdown("**HSP Field Guide**")
+    st.markdown(
+        """
+- 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  
+- 🟠 **0.80–0.99** → Heat Balance Marginal  
+- 🔴 **HSP ≥ 1.00** → Heat Gain Likely Exceeds Heat Loss  
+"""
+    )
+    if (mwl_env is not None) and (mwl_op is not None):
+        st.markdown(
+            f"""<div style="padding:10px;border-radius:10px;background:#ffffff;border:1px solid rgba(0,0,0,0.06);">
+            Cooling capacity (environmental): <b>{mwl_env:.0f} W/m²</b><br>
+            Cooling capacity (operational): <b>{mwl_op:.0f} W/m²</b><br>
+            Source: <b>{mwl_source}</b> | Cap applied: <b>{mwl_cap:.0f} W/m²</b>
+            </div>""",
+            unsafe_allow_html=True
+        )
+
+with st.expander("🧑‍🏭 Worker Messages (Tap to Expand)", expanded=False):
+    st.markdown("**English (simple)**")
+    st.markdown(
+        """
+- Drink small amounts often (Do Not Wait for Thirst).
+- Slow down (Self-Pace). Take Cooling Breaks in Shade when told — and Even Earlier if You feel unwell.
+- Tell your supervisor immediately if you feel unwell, dizzy, weak, confused, or nauseated.
+"""
+    )
+    st.markdown("**Local languages  (Eg., Arabic / Hindi / Urdu /Spanish Etc) — Planned For Future Versions**")
+    st.info("Next Step: Adding Short, Field-Safe Translations for Key Messages.")
+
+if ss.get("debug_mode", False):
+    st.caption(
+        f"DEBUG → wbgt_policy_sev={wbgt_policy_sev} | wbgt_eff_c={float(wbgt_eff):.2f} | "
+        f"hsp={(hsp if hsp is not None else -1):.2f} | final_risk={final_risk}"
     )
 
 # ======================================================================
-# BLOCK 8 — LOGGING OF COMPUTED DECISIONS (AUDIT TRAIL) — SAFE (NO RERUN SPAM)
+# BLOCK 8 — AUDIT LOG & EXPORT
 # ======================================================================
 
 st.markdown("---")
-st.markdown("## 📜 Heat-Stress Audit History")
+st.markdown("## 📜 Heat-Stress Audit History (Saved Records)")
 
 # Ensure audit log exists
 if "audit_log" not in ss:
     ss["audit_log"] = []
 
-# IMPORTANT: log only once per "Apply adjustments & compute" click
-# We do this by tracking a monotonically increasing compute counter.
-if "compute_counter" not in ss:
-    ss["compute_counter"] = 0
+# Monotonic save counter to avoid duplicate appends on Streamlit reruns
+if "save_counter" not in ss:
+    ss["save_counter"] = 0
+if "last_saved_id" not in ss:
+    ss["last_saved_id"] = -1
 
-# Block 5B must set: ss["compute_counter"] += 1 when the button is clicked.
-# If you haven't added that yet, scroll down — I show the 2-line patch.
-current_compute_id = ss.get("compute_counter", 0)
+# Controls
+colA, colB = st.columns([1.0, 1.0], vertical_alignment="center")
+with colA:
+    save_now = st.button(
+        "💾 Save Record",
+        type="primary",
+        use_container_width=True,
+        key="btn_save_record_block8",
+    )
+with colB:
+    st.caption("Save stores the current computed decision. Compute does not create saved records.")
 
-if "last_logged_compute_id" not in ss:
-    ss["last_logged_compute_id"] = -1
+if save_now:
+    ss["save_counter"] += 1
 
-# Only log when penalties were applied AND a new compute event happened
+current_save_id = ss.get("save_counter", 0)
+
+# Append ONLY when a new Save event happens (and we have computed values)
 if (
-    ss.get("penalties_applied", False)
+    current_save_id != ss.get("last_saved_id", -1)
     and ss.get("wbgt_eff_c") is not None
-    and current_compute_id != ss["last_logged_compute_id"]
 ):
-
-    # Pull values safely
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     place = ss.get("place_label", "")
 
-    db_c = float(ss.get("db_c", 0.0))
-    rh = float(ss.get("rh_pct", 0.0))
-    gt_c = float(ss.get("gt_c", 0.0))
-    ws_ms = float(ss.get("ws_ms", 0.0))
+    # Inputs (stored internally as metric)
+    db_c  = float(ss.get("db_c", 0.0) or 0.0)
+    rh    = float(ss.get("rh_pct", 0.0) or 0.0)
+    gt_c  = float(ss.get("gt_c", 0.0) or 0.0)
+    ws_ms = float(ss.get("ws_ms", 0.0) or 0.0)
 
+    # WBGT values
     wbgt_base_frozen = ss.get("wbgt_base_frozen", None)
-    wbgt_eff_c = float(ss.get("wbgt_eff_c", 0.0))
-    total_penalty_c = float(ss.get("total_penalty_c", 0.0))
+    wbgt_eff_c = float(ss.get("wbgt_eff_c", 0.0) or 0.0)
+    total_penalty_c = float(ss.get("total_penalty_c", 0.0) or 0.0)
 
-    # HSP values (may or may not exist)
-    hsp_env = ss.get("hsp_env", None)
-    hsp_op = ss.get("hsp_op", None)
+    # HSP (as computed in Block 7)
+    hsp_val = ss.get("hsp", None)
 
-    # NOTE: CHSI is suppressed; do not log misleading values
-    chsi_scaled = None
+    # Final risk (prefer post-override)
+    risk_final = ss.get("final_risk", ss.get("risk_band", ""))
+
+    # Wet bulb if available (try common keys)
+    wb_logged = None
+    for k in ("twb_c", "wb_interp_c", "wb_c", "wb_calc_c", "wb_derived_c", "wetbulb_c"):
+        v = ss.get(k)
+        if v is not None:
+            try:
+                wb_logged = float(v)
+                break
+            except Exception:
+                pass
+
+    # Display-units for Effective WBGT in the saved record
+    units_mode = ss.get("units", "metric")  # expected: "metric" or "imperial"
+    if units_mode == "imperial":
+        wbgt_eff_disp_val = (wbgt_eff_c * 9/5) + 32
+        wbgt_eff_disp_unit = "°F"
+    else:
+        wbgt_eff_disp_val = wbgt_eff_c
+        wbgt_eff_disp_unit = "°C"
 
     log_entry = {
         "timestamp": ts,
         "location": place,
 
-        # Environment inputs
         "DB (°C)": f"{db_c:.1f}",
         "RH (%)": f"{rh:.0f}",
         "GT (°C)": f"{gt_c:.1f}",
         "Wind (m/s)": f"{ws_ms:.2f}",
 
-        # WBGT outputs
+        "WB (°C)": f"{wb_logged:.1f}" if wb_logged is not None else "",
+
         "WBGT baseline frozen (°C)": f"{float(wbgt_base_frozen):.1f}" if wbgt_base_frozen is not None else "",
         "Exposure adjustment total (°C)": f"{total_penalty_c:.1f}",
+
+        # Save both canonical and display-facing
         "Effective WBGT (°C)": f"{wbgt_eff_c:.1f}",
+        f"Effective WBGT ({wbgt_eff_disp_unit})": f"{wbgt_eff_disp_val:.1f}",
 
-        # Risk
-        "Risk": ss.get("risk_band", ""),
-
-        # HSP outputs (if available)
-        "HSP env (TWL/WBGTbase)": f"{float(hsp_env):.2f}" if hsp_env is not None else "",
-        "HSP op (TWL/WBGTeff)": f"{float(hsp_op):.2f}" if hsp_op is not None else "",
-
-        # CHSI suppressed
-        "CHSI (suppressed)": "" if chsi_scaled is None else f"{chsi_scaled:.0f}",
+        "HSP": f"{float(hsp_val):.2f}" if hsp_val is not None else "",
+        "Final Risk": risk_final,
     }
 
     ss["audit_log"].append(log_entry)
-    ss["last_logged_compute_id"] = current_compute_id
+    ss["last_saved_id"] = current_save_id
+    st.success(f"Saved to Audit History. Effective WBGT: {wbgt_eff_disp_val:.1f} {wbgt_eff_disp_unit}")
 
 # -----------------------------
 # Audit Log Display & Export
 # -----------------------------
-has_log = bool(ss["audit_log"])
+has_log = bool(ss.get("audit_log"))
 
 if has_log:
     df = pd.DataFrame(ss["audit_log"])
     st.dataframe(df, use_container_width=True)
     csv_data = df.to_csv(index=False).encode("utf-8")
 else:
-    st.info(
-        "No computed decisions yet. Records appear after you press "
-        "**Apply adjustments & compute**."
-    )
+    st.info("No saved records yet. Press **Save Record** to store an entry.")
     csv_data = b""
 
 st.info(
     "Export is optional. If you choose to export, select a folder and file name "
     "when prompted. After saving or cancelling, you will return to this assessment screen."
-    "Skip Export if you do not need a record."
 )
 
 st.caption("Export saves a CSV file without leaving the assessment screen.")
@@ -1355,26 +1587,8 @@ st.download_button(
     file_name=f"CHSRMT_Audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     mime="text/csv",
     disabled=not has_log,
+    key="btn_export_audit_block8",
 )
-
-# Display log
-# has_log = bool(ss["audit_log"])
-
-# # if has_log:
-  #  df = pd.DataFrame(ss["audit_log"])
-   # st.dataframe(df, use_container_width=True)
-    # csv_data = df.to_csv(index=False).encode("utf-8")
-# else:
-  #  st.info("No computed decisions yet. Records appear after you press **Apply adjustments & compute**.")
-   # csv_data = b""
-
-# st.download_button(
-  #  label="📥 Download Audit Log as CSV",
-   # data=csv_data,
-    # file_name=f"CHSRMT_Audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-    # mime="text/csv",
-    # disabled=not has_log,
-# )
 
 # ======================================================================
 # BLOCK 9 — APPENDIX & FIELD GUIDANCE (MASTER COLLAPSIBLE) + FOOTER SAFE
@@ -1386,136 +1600,131 @@ with st.expander("📘 Guidance & Field Appendices", expanded=False):
 
     st.markdown("### Hydration, Acclimatization, Work–Rest & Warning Signs")
 
+    # --------------------------------------------------
+    # Hydration
+    # --------------------------------------------------
     with st.expander("🥤 Hydration Guidance (General Field Advice)"):
         st.markdown("""
-        **Suggested quantities (moderate work)**  
-        - 250–500 mL every **20 minutes**  
-        - Avoid > 1.5 L/hour (risk of hyponatremia)  
-        - Include **electrolytes every 2–3 hours**
-        
-        **Avoid**
-        - Alcohol before work  
-        - Excessive caffeine  
-        - Energy drinks as fluid replacement
-        
-        **Warning signs of dehydration**
-        - Thirst, dry mouth  
-        - Dark yellow urine  
-        - Headache, fatigue  
-        - Cramps
-        """)
+**Suggested quantities (moderate work)**  
+- 250–500 mL every **20 minutes**  
+- Avoid > 1.5 L/hour (risk of hyponatremia)  
+- Include **electrolytes every 2–3 hours**
+
+**Avoid**
+- Alcohol before work  
+- Excessive caffeine  
+- Energy drinks as fluid replacement  
+
+**Warning signs of dehydration**
+- Thirst, dry mouth  
+- Dark yellow urine  
+- Headache, fatigue  
+- Cramps
+""")
+
+    # --------------------------------------------------
+    # Acclimatization
+    # --------------------------------------------------
     with st.expander("⚡ Acclimatization — Practical Field Approach"):
-                   st.markdown("""
-                   **How acclimatization should be viewed (modern approach)**
+        st.markdown("""
+**How acclimatization should be viewed (modern approach)**
 
-                   Acclimatization is **not a rigid schedule**, but a **period of reduced expectations**
-                   that allows the worker’s body to adapt safely to heat.
+Acclimatization is **not a rigid schedule**, but a **period of reduced expectations**
+that allows the worker’s body to adapt safely to heat.
 
-                   • Productivity expectations should be **temporarily lowered**  
-                   • **Rest breaks should be encouraged**, not penalized  
-                   • **Self-pacing** should be allowed wherever feasible  
+• Productivity expectations should be **temporarily lowered**  
+• **Rest breaks should be encouraged**, not penalized  
+• **Self-pacing** should be allowed wherever feasible  
 
-                   **Supervisory responsibilities during acclimatization**
+**Supervisory responsibilities during acclimatization**
 
-                    Acclimatization is a period of **heightened vigilance**, requiring:
+Acclimatization is a period of **heightened vigilance**, requiring:
 
-                    • Frequent or continuous observation by supervisors  
-                    • Buddy systems, especially during the first few shifts  
-                    • Periodic check-ins asking:
-                    – “How are you feeling?”
-                    – “Can you continue safely?”
-                    – “Do you need a break or cooling?”
+• Frequent or continuous observation by supervisors  
+• Buddy systems, especially during the first few shifts  
+• Periodic check-ins asking:
+– “How are you feeling?”  
+– “Can you continue safely?”  
+– “Do you need a break or cooling?”  
 
-                    **Higher-risk situations**
-                    • New workers  
-                    • Workers returning after ≥ 1 week absence  
-                    • Workers recovering from illness  
-                    • Sudden increases in heat, PPE, or workload
+**Higher-risk situations**
+• New workers  
+• Workers returning after ≥ 1 week absence  
+• Workers recovering from illness  
+• Sudden increases in heat, PPE, or workload  
 
-                    **Key principle**
-                    Acclimatization succeeds when **workers are protected, not pushed**.
-    """)
+**Key principle**
+Acclimatization succeeds when **workers are protected, not pushed**.
+""")
 
-
-
-    # with st.expander("⚡ Acclimatization Expectations (OSHA/NIOSH style)"):
-      #  st.markdown("""
-       # **Typical timeline**
-        # - 5–7 shifts of increasing exposure  
-        # - Begin at **20% of usual duration** on day 1, add **20% per day**
-        
-        # **High-risk when**
-        # - New workers  
-        # - Returning after > 1 week absence  
-        # - Workers recently ill
-        
-        # **Supervision**
-        # - Buddy system during first 1–3 days  
-        # - Observe for confusion or loss of coordination
-        # """)
-
+    # --------------------------------------------------
+    # Work–Rest Prompts
+    # --------------------------------------------------
     with st.expander("⏱ Work–Rest / Supervision Prompts"):
         st.markdown("""
-        These prompts support **field supervisors** and do not replace policy.
-        
-        **Green Zone**
-        - Routine work  
-        - Encourage fluids  
-        - Normal supervision
-        
-        **Amber Zone**
-        - Enforce breaks  
-        - Actively monitor symptoms  
-        - Provide shade
-        
-        **Red / Withdrawal Zone**
-        - Stop routine work  
-        - Only emergency tasks with medical oversight  
-        - Mandatory cooling interventions
-        """)
+These prompts support **field supervisors** and do not replace policy.
 
+**Green Zone**
+- Routine work  
+- Encourage fluids  
+- Normal supervision  
+
+**Amber Zone**
+- Enforce breaks  
+- Actively monitor symptoms  
+- Provide shade  
+
+**Red / Withdrawal Zone**
+- Stop routine work  
+- Only emergency tasks with medical oversight  
+- Mandatory cooling interventions
+""")
+
+    # --------------------------------------------------
+    # Early Warning Signs
+    # --------------------------------------------------
     with st.expander("🚩 Early Warning Signs & First-Aid Triggers"):
         st.markdown("""
-        *Clinical guidance reflects contemporary **NIOSH** and **ACGIH** interpretations of exertional heat illness
-                     and heat stroke, emphasizing **neurologic and functional red-flag symptoms** over classical
-                     thermoregulatory signs.*
-        **Red-flag symptoms requiring immediate action**
-        - Dizziness, collapse, faintness  
-        - Confusion or altered behavior  
-        - Vomiting  
-        - Staggering movement
-        
-        **Immediate steps**
-        - Move to shade/cooling  
-        - Apply cool water/packs to neck/axilla/groin  
-        - Provide fluids if conscious  
-        - Activate emergency medical support if no rapid improvement
-        """)
+*Clinical guidance reflects contemporary **NIOSH** and **ACGIH** interpretations of exertional heat illness
+and heat stroke, emphasizing neurologic red-flag symptoms.*
 
+**Red-flag symptoms requiring immediate action**
+- Dizziness, collapse, faintness  
+- Confusion or altered behavior  
+- Vomiting  
+- Staggering movement  
+
+**Immediate steps**
+- Move to shade/cooling  
+- Apply cool water/packs to neck/axilla/groin  
+- Provide fluids if conscious  
+- Activate emergency medical support if no rapid improvement
+""")
+
+    # --------------------------------------------------
+    # Medical Endpoints
+    # --------------------------------------------------
     with st.expander("🏥 Common Medical End-points (for HSE orientation)"):
         st.markdown("""
-        **Heat Exhaustion**
-        - Sweating, nausea, rapid pulse  
-        - Elevated temperature but < 40°C (104°F)  
-        - Requires fluid replacement & monitoring
-        
-        **Heat Stroke**
-        - Core temperature ≥ 40°C (≥104°F)  
-        - CNS dysfunction (confusion, seizure, coma)  
-        - **Medical emergency — activate EMS**
-        """)
+**Heat Exhaustion**
+- Sweating, nausea, rapid pulse  
+- Elevated temperature but < 40°C (104°F)  
+- Requires fluid replacement & monitoring  
+
+**Heat Stroke**
+- Core temperature ≥ 40°C (≥104°F)  
+- CNS dysfunction (confusion, seizure, coma)  
+- **Medical emergency — activate EMS**
+""")
 
     st.markdown("---")
     st.caption(
-        "This appendix provides field-support content only. It does **not replace medical assessment, OSHA/NIOSH procedures, or employer HSE policy.**"
+        "This appendix provides field-support content only. It does NOT replace medical assessment, "
+        "OSHA/NIOSH procedures, or employer HSE policy."
     )
 
-# Add bottom padding so footer does not cover buttons/tables
-st.markdown(
-    "<div style='height: 72px;'></div>",
-    unsafe_allow_html=True
-)
-
+st.markdown("<div style='height:72px;'></div>", unsafe_allow_html=True)
+ 
 # ======================================================================
 # FIXED PROFESSIONAL FOOTER — OWNERSHIP + PUBLIC USE + FEEDBACK
 # ======================================================================
