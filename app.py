@@ -1,3 +1,4 @@
+
 # ======================================================================
 # BLOCK 1 — Imports, page config, utilities, session defaults
 # ======================================================================
@@ -27,69 +28,106 @@ st.set_page_config(
 # ----------------------------
 st.markdown("""
 <style>
-h1 {font-size: 1.45rem !important; margin-bottom: 0.3rem;}
-h2 {font-size: 1.25rem !important; margin-bottom: 0.25rem;}
-h3 {font-size: 1.05rem !important; margin-bottom: 0.2rem;}
-div[data-testid="stMarkdownContainer"] p {margin-bottom: 0.15rem;}
 
-/* Welcome header box — reduced height */
+/* ---------- Typography ---------- */
+h1 {font-size: 1.40rem !important; margin-bottom: 0.25rem;}
+h2 {font-size: 1.20rem !important; margin-bottom: 0.20rem;}
+h3 {font-size: 1.00rem !important; margin-bottom: 0.15rem;}
+
+div[data-testid="stMarkdownContainer"] p {
+    margin-bottom: 0.12rem;
+}
+
+/* Tighten bullet spacing */
+.stMarkdown ul {
+    margin-top: 0.20rem;
+    margin-bottom: 0.30rem;
+    padding-left: 1.1rem;
+}
+.stMarkdown li {
+    margin-bottom: 0.12rem;
+}
+
+/* ---------- Welcome Header ---------- */
 .welcome-box {
     background: linear-gradient(90deg, #0f4c75, #3282b8);
-    padding: 0.65rem 0.85rem;        /* tighter */
+    padding: 0.55rem 0.70rem;
     border-radius: 10px;
     color: white;
-    margin-bottom: 0.40rem;          /* tighter */
-}
-.welcome-box h2 {
-    font-size: 1.15rem;              /* tighter */
-    margin-bottom: 0.15rem;          /* tighter */
-    font-weight: 750;
-}
-.welcome-box p {
-    font-size: 0.88rem;
-    opacity: 0.92;
-    margin: 0.10rem 0;
+    margin-bottom: 0.30rem;
 }
 
+.welcome-box h2 {
+    font-size: 1.10rem;
+    margin-bottom: 0.10rem;
+    font-weight: 700;
+}
+
+.welcome-box p {
+    font-size: 0.85rem;
+    opacity: 0.92;
+    margin: 0.08rem 0;
+}
+
+/* ---------- Section Headings ---------- */
 .section-title {
     color: #1f6fb2;
     font-weight: 700;
-    font-size: 1.12rem;
-    margin-top: 0.45rem;
-    margin-bottom: 0.12rem;
+    font-size: 1.08rem;
+    margin-top: 0.35rem;
+    margin-bottom: 0.10rem;
 }
+
 .section-sub {
     color: #5f7f9c;
-    font-size: 0.90rem;
-    margin-bottom: 0.2rem;
+    font-size: 0.88rem;
+    margin-bottom: 0.15rem;
 }
 
-div.block-container {padding-top: 1rem; padding-bottom: 1rem;}
-div[data-testid="stVerticalBlock"] {gap: 0.35rem;}
+/* ---------- Layout Tightening ---------- */
+div.block-container {
+    padding-top: 0.85rem;
+    padding-bottom: 1.10rem;
+}
 
-/* tighter column spacing (helps mobile) */
-div[data-testid="stHorizontalBlock"] { gap: 0.55rem; }
+div[data-testid="stVerticalBlock"] {
+    gap: 0.32rem;
+}
 
-/* extra-tight on narrow screens */
+div[data-testid="stHorizontalBlock"] {
+    gap: 0.50rem;
+}
+
+/* ---------- Mobile Optimization ---------- */
 @media (max-width: 700px) {
-  div[data-testid="stHorizontalBlock"] { gap: 0.35rem; }
-  div.block-container { padding-left: 0.75rem; padding-right: 0.75rem; }
+
+  div[data-testid="stHorizontalBlock"] {
+      gap: 0.30rem;
+  }
+
+  div.block-container {
+      padding-left: 0.65rem;
+      padding-right: 0.65rem;
+  }
+
+  h2 {
+      margin-top: 0.05rem !important;
+  }
+
 }
+
 </style>
 """, unsafe_allow_html=True)
 
+# ======================================================
+# SESSION STATE HANDLE (MUST BE DEFINED BEFORE ANY ss[...] USE)
+# ======================================================
 ss = st.session_state
 
-def subtle_divider():
-    """Small visual separator between major result cards."""
-    st.markdown(
-        '<div style="border-top:1px solid rgba(0,0,0,0.10); margin:10px 0 12px 0;"></div>',
-        unsafe_allow_html=True
-    )
-
-def result_header(label: str = "Results below correspond to the inputs entered above."):
-    subtle_divider()
-    st.caption(label)
+def ss_default(key, val):
+    """Set a session default only if the key does not exist."""
+    if key not in ss:
+        ss[key] = val
 
 # ----------------------------
 # Unit conversion helpers
@@ -104,10 +142,6 @@ def inhg_to_kpa(i): return i / 0.2953
 def fmt_temp(temp_c, unit):
     return f"{temp_c:.1f} °C" if unit == "metric" else f"{c_to_f(temp_c):.1f} °F"
 
-def ss_default(key, val):
-    if key not in ss:
-        ss[key] = val
-
 # ----------------------------
 # Locked HSP band edges (DO NOT change per run)
 # ----------------------------
@@ -120,7 +154,7 @@ HSP_AMBER = 4.0   # Caution
 # These are "calibration knobs" that we will tune using your field scenarios.
 # ----------------------------
 ss_default("MWL_A0", 450.0)     # base W/m²
-ss_default("MWL_A_wb", 12.0)     # wet-bulb adjustment weight
+ss_default("MWL_A_wb", 12.0)    # wet-bulb adjustment weight
 ss_default("MWL_A_rad", 4.0)    # radiant adjustment weight (GT-DB)
 ss_default("MWL_A_wind", 10.0)  # wind benefit weight (sqrt(ws))
 ss_default("MWL_MIN", 60.0)     # clamp
@@ -412,6 +446,7 @@ if ss.get("confirm_reset", False):
     with c2:
         if st.button("❌ Cancel"):
             del ss["confirm_reset"]
+
 
 # ======================================================================
 # BLOCK 2 — Sidebar controls (Mirror only — no duplicate masters)
@@ -1453,7 +1488,7 @@ elif final_risk == "HIGH STRAIN":
     monitor_items   = ["Close observation", "STOP WORK IMMEDIATELY If SYMPTOMS APPEAR"]
 
 else:  # WITHDRAWAL
-    hydration_items = ["Stop Routine Work; Move to Shade/Cool area", "Small Frequent Sips If Fully Alert", "Confused/Vomiting/Disoriented → No Oral Fluids; Call Site Medical"]
+    hydration_items = ["Stop Routine Work; Move to Shade/Cool area", "Small Frequent Sips If Fully Alert", "Worker Confused/Vomiting/Disoriented → No Oral Fluids; Call Site Medical"]
     workrest_items  = ["Only Essential Tasks with Strict Time Limits", "Rotate Staff; Keep Exposures Very Short"]
     cooling_items   = ["Immediate Active Cooling for Symptomatic Workers", "Escalate Quickly for Severe Signs"]
     monitor_items   = ["Continuous Observation", "Emergency Trigger: Confusion/Collapse/Seizure → Activate Response"]
