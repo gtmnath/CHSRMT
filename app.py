@@ -14,7 +14,7 @@ import pandas as pd
 import requests
 import streamlit as st
 from datetime import datetime
-APP_VERSION = "APP_VERSION = "v2.0.1"
+APP_VERSION = "v2.0.1"
 
 st.set_page_config(
     page_title="CHSRMT",
