@@ -14,7 +14,8 @@ import pandas as pd
 import requests
 import streamlit as st
 from datetime import datetime
-APP_VERSION = "v2.0.1"
+
+APP_VERSION = "v2.0.1-WBGT-Field"
 
 st.set_page_config(
     page_title="CHSRMT",
@@ -299,7 +300,7 @@ if not ss["landing_open"]:
     </p>
     """, unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<div style=\"border-top:1px solid rgba(0,0,0,0.10); margin:0.20rem 0 0.40rem 0;\"></div>", unsafe_allow_html=True)
 
     st.markdown("""
     <div class="welcome-box">
@@ -1049,8 +1050,7 @@ with st.expander("🎯 Heat-Stress Thresholds (NIOSH / OSHA Reference)", expande
 # - All emojis are inside strings (prevents U+1F7E2 invalid character errors)
 # ======================================================================
 
-ss = st.session_state
-
+# ss session-state handle is defined once in Block 1
 # ---------- Compact CSS (safe) ----------
 st.markdown("""
 <style>
@@ -1486,7 +1486,7 @@ elif final_risk == "HIGH STRAIN":
     monitor_items   = ["Close observation", "STOP WORK IMMEDIATELY If SYMPTOMS APPEAR"]
 
 else:  # WITHDRAWAL
-    hydration_items = ["Stop Routine Work; Move to Shade/Cool area", "Small Frequent Sips If Fully Alert", "Worker Confused/Vomiting/Disoriented → No Oral Fluids; Call Site Medical"]
+    hydration_items = ["Stop Routine Work; Move to Shade/Cool area", "Small Frequent Sips If Fully Alert", "Confused/Vomiting/Disoriented → No Oral Fluids; Call Site Medical"]
     workrest_items  = ["Only Essential Tasks with Strict Time Limits", "Rotate Staff; Keep Exposures Very Short"]
     cooling_items   = ["Immediate Active Cooling for Symptomatic Workers", "Escalate Quickly for Severe Signs"]
     monitor_items   = ["Continuous Observation", "Emergency Trigger: Confusion/Collapse/Seizure → Activate Response"]
