@@ -18,8 +18,9 @@ from datetime import datetime
 APP_VERSION = "v2.0.1-WBGT-Field"
 
 st.set_page_config(
-    page_title="CHSRMT — Calibrated Heat Stress Risk CHSRMT",
+    page_title="CHSRMT — Calibrated Heat Stress Risk Management Tool",
     layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
 # ----------------------------
@@ -189,6 +190,14 @@ div[data-testid="stHorizontalBlock"] {
   section[data-testid="stSidebar"] { display: none !important; }
   div[data-testid="collapsedControl"] { display: none !important; } /* hides the sidebar toggle */
 }
+
+
+
+/* ---------- Force white text inside the blue welcome box (prevents light-mode overrides) ---------- */
+.welcome-box, .welcome-box * {
+    color: rgba(255,255,255,0.96) !important;
+}
+.welcome-box b, .welcome-box strong { font-weight: 800 !important; }
 
 </style>
 """, unsafe_allow_html=True)
