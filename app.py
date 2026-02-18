@@ -1,4 +1,3 @@
-
 # ======================================================================
 # BLOCK 1 — Imports, page config, utilities, session defaults
 # ======================================================================
@@ -19,7 +18,7 @@ from datetime import datetime
 APP_VERSION = "v2.0.1-WBGT-Field"
 
 st.set_page_config(
-    page_title="CHSRMT — Field WBGT + HSP",
+    page_title="CHSRMT — Calibrated Heat Stress Risk Management Tool",
     layout="wide",
 )
 
@@ -118,6 +117,38 @@ div[data-testid="stHorizontalBlock"] {
       margin-top: 0.05rem !important;
   }
 
+}
+
+
+/* =========================
+   Mobile + Dark-mode contrast fixes (v3)
+   ========================= */
+@media (prefers-color-scheme: dark) {
+  .ui-strong, .ui-subtle, .ui-note, .ui-caption, .ui-help, .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span, label, .stCaption {
+    color: rgba(255,255,255,0.92) !important;
+    opacity: 1 !important;
+  }
+  .ui-subtle, .ui-caption, .ui-help {
+    color: rgba(255,255,255,0.78) !important;
+  }
+  .ui-divider {
+    border-top: 1px solid rgba(255,255,255,0.25) !important;
+  }
+  .stExpander, .stExpanderHeader, .stExpander p, .stExpander span {
+    color: rgba(255,255,255,0.90) !important;
+  }
+}
+@media (prefers-color-scheme: light) {
+  .ui-strong, .ui-subtle, .ui-note, .ui-caption, .ui-help, .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span, label, .stCaption {
+    color: rgba(20,20,20,0.96) !important;
+    opacity: 1 !important;
+  }
+  .ui-subtle, .ui-caption, .ui-help {
+    color: rgba(40,40,40,0.84) !important;
+  }
+  .ui-divider {
+    border-top: 1px solid rgba(0,0,0,0.18) !important;
+  }
 }
 
 </style>
