@@ -20,7 +20,7 @@ APP_VERSION = "v2.0.1-WBGT-Field"
 st.set_page_config(
     page_title="CHSRMT — Calibrated Heat Stress Risk Management Tool",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ----------------------------
@@ -387,14 +387,16 @@ if not ss["landing_open"]:
     st.markdown("<div style=\"border-top:1px solid rgba(0,0,0,0.10); margin:0.20rem 0 0.40rem 0;\"></div>", unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="welcome-box">
-        <h2 style="margin-bottom:0.25rem;">☀️ CHSRMT-Field Heat-Stress Assessment Dashboard</h2>
-        <p style="margin-top:0.15rem;">
-          <b>WBGT</b> = Regulatory Screening / Compliance Guide For Environmental Heat Hazard.<br>
-          <b>Heat Strain Profile (HSP)</b> = Human Cooling Ability vs Heat Load Using Cooling Capacity (W/m²).
+    <div class="welcome-box" style="color: rgba(255,255,255,0.96) !important;">
+        <h2 style="margin-bottom:0.25rem; color: rgba(255,255,255,0.98) !important;">
+          ☀️ CHSRMT-Field Heat-Stress Assessment Dashboard
+        </h2>
+        <p style="margin-top:0.15rem; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
+          <span style="font-weight:800;">WBGT</span> = Regulatory Screening / Compliance Guide For Environmental Heat Hazard.<br>
+          <span style="font-weight:800;">Heat Strain Profile (HSP)</span> = Human Cooling Ability vs Heat Load Using Cooling Capacity (W/m²).
         </p>
-        <p style="margin-bottom:0;">
-          <b>Workflow:</b> Inputs → Baseline WBGT → Exposure Adjustments → Effective WBGT → HSP → Guidance → Logging
+        <p style="margin-bottom:0; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
+          <span style="font-weight:800;">Workflow:</span> Inputs → Baseline WBGT → Exposure Adjustments → Effective WBGT → HSP → Guidance → Logging
         </p>
     </div>
     """, unsafe_allow_html=True)
