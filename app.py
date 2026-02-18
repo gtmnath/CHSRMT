@@ -294,7 +294,7 @@ except Exception:
 
 if not ss["landing_open"]:
     st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>CHSRMT</h2>
+    <h2 style='margin-bottom:0.2rem;'>CHSRMT-HEAT RISK MANAGEMENT TOOL</h2>
     <p style='margin-top:0; color: #555;'>
     Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
