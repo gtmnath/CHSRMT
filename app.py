@@ -18,7 +18,7 @@ from datetime import datetime
 APP_VERSION = "v2.0.1-WBGT-Field"
 
 st.set_page_config(
-    page_title="CHSRMT — Calibrated Heat Stress Risk Management Tool",
+    page_title="CHSRMT — Calibrated Heat Stress Risk CHSRMT",
     layout="wide",
 )
 
@@ -104,6 +104,12 @@ div[data-testid="stHorizontalBlock"] {
 /* ---------- Mobile Optimization ---------- */
 @media (max-width: 700px) {
 
+  /* Hide sidebar on phones to maximize readability */
+  section[data-testid="stSidebar"], div[data-testid="stSidebar"] { display: none !important; }
+  /* Remove extra left padding reserved for sidebar */
+  .stApp { margin-left: 0 !important; }
+
+
   div[data-testid="stHorizontalBlock"] {
       gap: 0.30rem;
   }
@@ -149,6 +155,39 @@ div[data-testid="stHorizontalBlock"] {
   .ui-divider {
     border-top: 1px solid rgba(0,0,0,0.18) !important;
   }
+}
+
+
+
+/* =========================
+   Mobile readability boost + optional sidebar hide
+   ========================= */
+@media (max-width: 700px) {
+  /* Make key headers + workflow line stand out more on phones */
+  .ui-strong, .ui-subtle {
+    opacity: 1 !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.1px;
+  }
+  .ui-subtle { font-weight: 700 !important; }
+
+  /* Welcome box body text: slightly larger + fully opaque */
+  .welcome-box p {
+    font-size: 0.92rem !important;
+    opacity: 1 !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Reduce “washed out” look of plain markdown text in dark mode phones */
+  div[data-testid="stMarkdownContainer"] p,
+  div[data-testid="stMarkdownContainer"] span,
+  div[data-testid="stMarkdownContainer"] li {
+    opacity: 1 !important;
+  }
+
+  /* OPTIONAL: hide sidebar completely on phones (main content gets full width) */
+  section[data-testid="stSidebar"] { display: none !important; }
+  div[data-testid="collapsedControl"] { display: none !important; } /* hides the sidebar toggle */
 }
 
 </style>
@@ -330,7 +369,7 @@ except Exception:
 
 if not ss["landing_open"]:
     st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk Management Tool</h2>
+    <h2 style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk CHSRMT</h2>
     <p class='ui-strong' style='margin-top:0; opacity:0.95;'>
     Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
@@ -401,7 +440,7 @@ if not ss["landing_open"]:
 # Working page header
 # ----------------------------
 st.markdown("""
-<h2 class='ui-strong' style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk Management Tool</h2>
+<h2 class='ui-strong' style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk CHSRMT</h2>
 <p class='ui-subtle' style='margin-top:0; margin-bottom:0.25rem;'>
 Field-ready decision support for occupational heat stress and heat strain
 </p>
@@ -411,6 +450,27 @@ st.markdown(
     "<span class='ui-subtle'>Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</span>",
     unsafe_allow_html=True
 )
+
+# ----------------------------
+# Quick Reference (WBGT bands + HSP) — mobile friendly (no sidebar needed)
+# ----------------------------
+with st.expander("📌 Quick Reference (WBGT bands + HSP interpretation)", expanded=False):
+    A = ss.get("thr_A_c", 29.0)
+    B = ss.get("thr_B_c", 32.0)
+    C = ss.get("thr_C_c", 35.0)
+
+    st.markdown("**WBGT policy bands (Effective WBGT uses these same thresholds):**")
+    st.write(f"🟢 LOW RISK: < {fmt_temp(A, ss.get('units','metric'))}")
+    st.write(f"🟠 CAUTION: {fmt_temp(A, ss.get('units','metric'))} – {fmt_temp(B, ss.get('units','metric'))}")
+    st.write(f"🔴 WITHDRAWAL: ≥ {fmt_temp(C, ss.get('units','metric'))}")
+
+    st.markdown("**HSP (Heat-Strain Profile):**")
+    st.write("🟢 **HSP < 0.80** → Cooling exceeds heat load (good margin)")
+    st.write("🟠 **0.80 – 0.99** → Marginal heat balance (close monitoring)")
+    st.write("🔴 **HSP ≥ 1.00** → Heat gain likely exceeds heat loss (rapid risk escalation)")
+
+    st.caption("Tip: On phones, the sidebar is hidden automatically. All key references are here.")
+
 
 # ======================================================
 # MAIN-PANEL DISPLAY UNITS (MOBILE SAFE)
@@ -1851,7 +1911,7 @@ st.markdown("---")
 
 with st.expander("ℹ About CHSRMT • Disclaimer • Feedback", expanded=False):
     st.markdown(f"""
-**© 2026 Dr. Gummanur T. Manjunath — CHSRMT® (Calibrated Heat Stress Risk Management Tool)**
+**© 2026 Dr. Gummanur T. Manjunath — CHSRMT® (Calibrated Heat Stress Risk CHSRMT)**
 
 Field Heat-Stress Decision Support System — Integrating **WBGT • MWL • HSP**  
 *(Instrument TWL input supported where available)*
