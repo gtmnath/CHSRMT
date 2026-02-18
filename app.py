@@ -1,3 +1,4 @@
+
 # ======================================================================
 # BLOCK 1 — Imports, page config, utilities, session defaults
 # ======================================================================
@@ -18,7 +19,7 @@ from datetime import datetime
 APP_VERSION = "v2.0.1-WBGT-Field"
 
 st.set_page_config(
-    page_title="CHSRMT",
+    page_title="CHSRMT — Field WBGT + HSP",
     layout="wide",
 )
 
@@ -36,6 +37,14 @@ h3 {font-size: 1.00rem !important; margin-bottom: 0.15rem;}
 div[data-testid="stMarkdownContainer"] p {
     margin-bottom: 0.12rem;
 }
+
+/* ---------- Visibility helpers (dark-mode safe) ---------- */
+.ui-strong { color: var(--text-color) !important; font-weight: 800 !important; opacity: 0.95; }
+.ui-subtle { color: var(--text-color) !important; font-weight: 600 !important; opacity: 0.94; }
+.ui-muted  { color: var(--text-color) !important; opacity: 0.88; }
+
+/* Make horizontal rules visible in both light & dark themes */
+hr { border: none !important; border-top: 1px solid rgba(128,128,128,0.50) !important; margin: 0.85rem 0 !important; }
 
 /* Tighten bullet spacing */
 .stMarkdown ul {
@@ -77,11 +86,7 @@ div[data-testid="stMarkdownContainer"] p {
     margin-bottom: 0.10rem;
 }
 
-.section-sub {
-    color: #5f7f9c;
-    font-size: 0.88rem;
-    margin-bottom: 0.15rem;
-}
+.section-sub { color: var(--text-color); opacity: 0.86; font-size: 0.88rem; margin-bottom: 0.15rem; }
 
 /* ---------- Layout Tightening ---------- */
 div.block-container {
@@ -294,8 +299,8 @@ except Exception:
 
 if not ss["landing_open"]:
     st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>CHSRMT</h2>
-    <p style='margin-top:0; color: #555;'>
+    <h2 style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk Management Tool</h2>
+    <p class='ui-strong' style='margin-top:0; opacity:0.95;'>
     Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
     """, unsafe_allow_html=True)
@@ -365,14 +370,14 @@ if not ss["landing_open"]:
 # Working page header
 # ----------------------------
 st.markdown("""
-<h2 style='margin-bottom:0.2rem;'>(Calibrated Heat Stress Risk Management Tool-CHSRMT)</h2>
-<p style='margin-top:0; margin-bottom:0.25rem; color:#222; font-weight:800;'>
-CHSRMT - Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
+<h2 class='ui-strong' style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk Management Tool</h2>
+<p class='ui-subtle' style='margin-top:0; margin-bottom:0.25rem;'>
+Field-ready decision support for occupational heat stress and heat strain
 </p>
 """, unsafe_allow_html=True)
 
 st.markdown(
-    "<span style='color:#444;'>Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</span>",
+    "<span class='ui-subtle'>Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</span>",
     unsafe_allow_html=True
 )
 
@@ -701,7 +706,7 @@ else:
         ss["env_dirty"] = bool(ss.get("env_dirty", False))
 
 st.markdown(
-    "<span style='color:#444;'>If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load.</span>",
+    "<span style='color:var(--text-color);'>If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load.</span>",
     unsafe_allow_html=True
 )
 
@@ -799,7 +804,7 @@ with st.expander("🧮 Baseline WBGT Calculation (Before exposure adjustments)",
 # ======================================================================
 
 st.markdown(
-    "<span style='color:#444;'>Optional: Enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
+    "<span style='color:var(--text-color);'>Optional: Enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
     unsafe_allow_html=True
 )
 
@@ -1126,7 +1131,7 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
 }
 .kpi-label{ font-size:0.86rem; color:#4a4a4a; margin-bottom:2px; }
 .kpi-value{ font-size:1.55rem; font-weight:850; line-height:1.05; color:#0b2239; }
-.kpi-sub{ margin-top:6px; font-size:0.93rem; line-height:1.15; color:#222; }
+.kpi-sub{ margin-top:6px; font-size:0.93rem; line-height:1.15; color:var(--text-color); }
 .kpi-foot{ margin-top:6px; font-size:0.90rem; color:#555; line-height:1.25; }
 
 /* Risk pills */
@@ -1449,9 +1454,9 @@ st.markdown(
     f"""
 <div style="padding:10px;border-radius:12px;background:#ffffff;border-left:7px solid {r_color};border:1px solid rgba(0,0,0,0.06);">
   <b style="font-size:16px;color:{r_color};line-height:1.15;">{r_icon} {r_label}</b><br>
-  <span style="color:#222;">Effective WBGT: <b>{wbgt_disp}</b></span><br>
-  <span style="color:#222;">HSP: <b>{hsp_show}</b></span><br>
-  <span style="color:#666;font-size:0.92rem;line-height:1.15;">
+  <span style="color:var(--text-color);">Effective WBGT: <b>{wbgt_disp}</b></span><br>
+  <span style="color:var(--text-color);">HSP: <b>{hsp_show}</b></span><br>
+  <span class="ui-muted" style="font-size:0.92rem;line-height:1.15;">
     Use WBGT for policy alignment. Use HSP as a cooling-capacity cross-check when it is more protective.
   </span>
 </div>
