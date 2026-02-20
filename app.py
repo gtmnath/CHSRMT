@@ -15,7 +15,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v2.0.0-HART"
+APP_VERSION = "v2.0.2-HART"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -380,16 +380,10 @@ ss_default("audit_log", [])
 # ----------------------------
 ss_default("landing_open", False)
 
-# --- Welcome gate latch (survives idle reconnect by using URL query param) ---
-try:
-    if st.query_params.get("started") == "1":
-        ss["landing_open"] = True
-except Exception:
-    pass
 
 if not ss["landing_open"]:
     st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL H.A.R.T</h2>
+    <h2 style='margin-bottom:0.2rem;'>H.A.R.T — Heat Assessment & Response Tool</h2>
     <p class='ui-strong' style='margin-top:0; opacity:0.95;'>
     Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
@@ -487,10 +481,6 @@ if not ss["landing_open"]:
     st.markdown("---")
     if st.button("🚀 Start Heat-Stress Assessment", type="primary", use_container_width=True):
         ss["landing_open"] = True
-        try:
-            st.query_params["started"] = "1"
-        except Exception:
-            pass
         st.rerun()
 
     st.stop()
@@ -499,7 +489,7 @@ if not ss["landing_open"]:
 # Working page header
 # ----------------------------
 st.markdown("""
-<h2 class='ui-strong' style='margin-bottom:0.2rem;'>H.A.R.T — HEAT ASSESSMENT & RESPONSE TOOL H.A.R.T</h2>
+    <h2 style='margin-bottom:0.2rem;'>H.A.R.T — Field Heat-Stress Assessment Dashboard</h2>
 <p class='ui-subtle' style='margin-top:0; margin-bottom:0.25rem;'>
 Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
 </p>
@@ -591,10 +581,6 @@ if ss.get("confirm_reset", False):
                     del ss[k]
 
             # Clear welcome latch so it truly returns to fresh start
-            try:
-                st.query_params.pop("started", None)
-            except Exception:
-                pass
 
             del ss["confirm_reset"]
             st.rerun()
@@ -858,7 +844,7 @@ else:
         ss["env_dirty"] = bool(ss.get("env_dirty", False))
 
 st.markdown(
-    "<span style='color:var(--text-color);'>If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load.</span>",
+    "<span style='color:#222;'>If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load.</span>",
     unsafe_allow_html=True
 )
 
@@ -956,7 +942,7 @@ with st.expander("🧮 Baseline WBGT Calculation (Before Exposure Adjustments)",
 # ======================================================================
 
 st.markdown(
-    "<span style='color:var(--text-color);'>Optional: Enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
+    "<span style='color:#222;'>Optional: Enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
     unsafe_allow_html=True
 )
 
@@ -1283,7 +1269,7 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
 }
 .kpi-label{ font-size:0.86rem; color:#4a4a4a; margin-bottom:2px; }
 .kpi-value{ font-size:1.55rem; font-weight:850; line-height:1.05; color:#0b2239; }
-.kpi-sub{ margin-top:6px; font-size:0.93rem; line-height:1.15; color:var(--text-color); }
+.kpi-sub{ margin-top:6px; font-size:0.93rem; line-height:1.15; color:#222; }
 .kpi-foot{ margin-top:6px; font-size:0.90rem; color:#555; line-height:1.25; }
 
 /* Risk pills */
@@ -1606,8 +1592,8 @@ st.markdown(
     f"""
 <div style="padding:10px;border-radius:12px;background:#ffffff;border-left:7px solid {r_color};border:1px solid rgba(0,0,0,0.06);">
   <b style="font-size:16px;color:{r_color};line-height:1.15;">{r_icon} {r_label}</b><br>
-  <span style="color:var(--text-color);">Adjusted WBGT: <b>{wbgt_disp}</b></span><br>
-  <span style="color:var(--text-color);">HSP: <b>{hsp_show}</b></span><br>
+  <span style="color:#222;">Adjusted WBGT: <b>{wbgt_disp}</b></span><br>
+  <span style="color:#222;">HSP: <b>{hsp_show}</b></span><br>
   <span class="ui-muted" style="font-size:0.92rem;line-height:1.15;">
     Use WBGT for policy alignment. Use HSP as a cooling-capacity cross-check when it is more protective.
   </span>
@@ -1622,7 +1608,7 @@ st.markdown(
 st.markdown("### 👷‍♂️ Supervisor Actions (Cooling Capacity & Process-Relevant)")
 
 def _ul(items):
-    return "<ul>" + "".join([f"<li>{x}</li>" for x in items]) + "</ul>"
+    return "<ul style=\"margin:0.35rem 0 0.25rem 1.1rem; color:#111; font-size:0.98rem; line-height:1.35;\">" + "".join([f"<li style=\"margin:0.15rem 0;\">{x}</li>" for x in items]) + "</ul>"
 
 if final_risk == "LOW":
     hydration_items = ["Encourage Regular Drinking (Cool Water)", "~250 mL Every 30 minutes", "Do Not Exceed ~1.5 L/hour"]
@@ -1987,4 +1973,3 @@ https://forms.gle/7rfrXZXkyCdXqGVs5
 
 **Build:** `{APP_VERSION}`
 """)
-
