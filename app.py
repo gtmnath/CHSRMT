@@ -15,7 +15,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v2.0.2-HART"
+APP_VERSION = "v2.0.3-HART"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -209,6 +209,14 @@ div[data-testid="stHorizontalBlock"] {
     text-shadow: 0 1px 1px rgba(0,0,0,0.28);
 }
 .welcome-box b, .welcome-box strong { font-weight: 800 !important; }
+
+
+/* --- Mobile visibility fix: ensure text is visible inside white cards (risk summary / supervisor actions) --- */
+.white-card, .white-card * { color: #0b2239 !important; }
+.white-card .ui-muted { color: #334155 !important; }  /* muted text inside white cards */
+.sa-card, .sa-card * { color: #0b2239 !important; }
+.kpi-card, .kpi-card * { color: #0b2239 !important; }
+/* keep colored emphasis when explicitly set inline */
 
 </style>
 """, unsafe_allow_html=True)
@@ -1590,11 +1598,11 @@ hsp_show = f"{hsp:.2f}" if hsp is not None else "—"
 
 st.markdown(
     f"""
-<div style="padding:10px;border-radius:12px;background:#ffffff;border-left:7px solid {r_color};border:1px solid rgba(0,0,0,0.06);">
-  <b style="font-size:16px;color:{r_color};line-height:1.15;">{r_icon} {r_label}</b><br>
-  <span style="color:#222;">Adjusted WBGT: <b>{wbgt_disp}</b></span><br>
-  <span style="color:#222;">HSP: <b>{hsp_show}</b></span><br>
-  <span class="ui-muted" style="font-size:0.92rem;line-height:1.15;">
+<div class="white-card" style="padding:10px;border-radius:12px;background:#ffffff;border-left:7px solid {r_color};border:1px solid rgba(0,0,0,0.06);">
+  <b style="font-size:16px;color:{r_color} !important;line-height:1.15;">{r_icon} {r_label}</b><br>
+  <span style="color:#222 !important;">Adjusted WBGT: <b>{wbgt_disp}</b></span><br>
+  <span style="color:#222 !important;">HSP: <b>{hsp_show}</b></span><br>
+  <span class="ui-muted" style="font-size:0.92rem;line-height:1.15;color:#334155 !important;">
     Use WBGT for policy alignment. Use HSP as a cooling-capacity cross-check when it is more protective.
   </span>
 </div>
