@@ -15,10 +15,10 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v2.0.1-WBGT-Field"
+APP_VERSION = "v2.0.0-HART"
 
 st.set_page_config(
-    page_title="CHSRMT — Calibrated Heat Stress Risk Management Tool",
+    page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -193,9 +193,20 @@ div[data-testid="stHorizontalBlock"] {
 
 
 
-/* ---------- Force white text inside the blue welcome box (prevents light-mode overrides) ---------- */
-.welcome-box, .welcome-box * {
-    color: rgba(255,255,255,0.96) !important;
+/* ---------- Force white text inside the blue welcome box (beats light-mode overrides) ---------- */
+.welcome-box,
+.welcome-box h2,
+.welcome-box h2 span,
+.welcome-box p,
+.welcome-box p span,
+.welcome-box li,
+.welcome-box li span,
+.welcome-box b,
+.welcome-box strong,
+.welcome-box a {
+    color: rgba(255,255,255,0.97) !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.28);
 }
 .welcome-box b, .welcome-box strong { font-weight: 800 !important; }
 
@@ -378,7 +389,7 @@ except Exception:
 
 if not ss["landing_open"]:
     st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk CHSRMT</h2>
+    <h2 style='margin-bottom:0.2rem;'>H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL H.A.R.T</h2>
     <p class='ui-strong' style='margin-top:0; opacity:0.95;'>
     Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
@@ -389,21 +400,21 @@ if not ss["landing_open"]:
     st.markdown("""
     <div class="welcome-box" style="color: rgba(255,255,255,0.96) !important;">
         <h2 style="margin-bottom:0.25rem; color: rgba(255,255,255,0.98) !important;">
-          ☀️ CHSRMT-Field Heat-Stress Assessment Dashboard
+          ☀️ H.A.R.T — Human Adaptive Response Threshold (Field Dashboard)
         </h2>
         <p style="margin-top:0.15rem; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
-          <span style="font-weight:800;">WBGT</span> = Regulatory Screening / Compliance Guide For Environmental Heat Hazard.<br>
+          <span style="font-weight:800;">WBGT</span> = Suggested Permissible Exposure(PEL) Limit - Regulatory Guide For Environmental Heat Hazard.<br>
           <span style="font-weight:800;">Heat Strain Profile (HSP)</span> = Human Cooling Ability vs Heat Load Using Cooling Capacity (W/m²).
         </p>
         <p style="margin-bottom:0; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
-          <span style="font-weight:800;">Workflow:</span> Inputs → Baseline WBGT → Exposure Adjustments → Effective WBGT → HSP → Guidance → Logging
+          <span style="font-weight:800;">Workflow:</span> Inputs → Baseline WBGT → Exposure Adjustments → Adjusted WBGT → HSP → Guidance → Logging
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("### What This Tool Does")
     st.markdown("""
-- Computes **Baseline WBGT** and **Effective WBGT** (After Clothing/PPE, Vehicle/Enclosure, Radiant/Hot Surfaces, And Ad-Hoc Adjustments)
+- Computes **Baseline WBGT** and **Adjusted WBGT** (After Clothing/PPE, Vehicle/Enclosure, Radiant/Hot Surfaces, And Ad-Hoc Adjustments)
 - Uses **Instrument TWL (W/m²)Readings** *if available* (sites with TWL instruments can enter the reading)
 - Estimates **MWL (W/m²)** when an instrument TWL reading is not available
 - Computes **HSP** (Heat-Strain Profile) to express **Human Cooling Margin** under current conditions
@@ -411,13 +422,13 @@ if not ss["landing_open"]:
 """)
 
     # Collapsible definitions / explanations (compact welcome screen)
-    with st.expander("📘 Definitions & Explanations (tap to expand)", expanded=False):
+    with st.expander("📘 Definitions & Explanations (Tap To Expand)", expanded=False):
         st.markdown("""
-**Core terms**
+**Core Terms**
 - **Heat Stress**: External Thermal Load from the environment and work conditions
 - **Heat Strain**: The Body’s Physiological Response while trying to maintain thermal balance
 - **Wet-Bulb (WB)**: Reflects Evaporative Potential and how effectively sweat can evaporate (a key physiological limiter)
-- **WBGT**: Screening / Regulatory Heat-Hazard Index used for compliance and baseline decisions
+- **WBGT**: Screening / Regulatory Heat-Hazard Index - PEL used for compliance and baseline decisions
 - **TWL (Thermal Work Limit)**: Instrument-Measured cooling capacity of the environment (W/m²)
 - **MWL (W/m²)**: Modeled Cooling Capacity when TWL instrumentation is not available  
   – Higher MWL → Longer Sustainable Work Duration  
@@ -427,11 +438,48 @@ if not ss["landing_open"]:
   – Higher HSP = Reduced Ability To Dissipate Heat
 - **Acclimatization**: Improves Sweat Efficiency, Cardiovascular Stability, And Overall Heat Tolerance
 
-**HSP interpretation (practical)**
+- **H.A.R.T (Human Adaptive Response Threshold)**: a memorable short name for this prototype dashboard.
+
+**HSP interpretation (Practical)**
 - 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  
 - 🟠 **0.80–0.99** → Heat Balance Marginal  
 - 🔴 **HSP ≥ 1.00** → Heat Gain Likely Exceeds Heat Loss
 """)
+
+    # Sources / standards reference (lightweight list to reassure reviewers)
+    with st.expander("📚 Sources & Standards (Summary)", expanded=False):
+        st.markdown("""
+**Sources of Screening Thresholds and Adjustment Concepts (High-Level):**
+- **WBGT**: widely used heat-stress screening index(as PEL or OEL) in occupational hygiene (commonly referenced in **ACGIH TLV®/Action Limit**, **NIOSH/OSHA guidance**, and **ISO heat-stress frameworks**).
+- **Exposure Adjustments**: Practical correction concepts aligned with published guidance on **clothing/PPE impacts, air movement, radiant heat, and enclosure effects**.
+- **HSP (Heat-Strain Profile)**: a *Physiology-Facing* indicator that compares estimated **cooling capacity (MWL proxy)** vs **heat load**, to help supervisors interpret “how tight the cooling margin is” beyond a single index.
+
+**Note:** This app is a decision-support prototype. Site policy, IH/OH judgement, and medical protocols always override.
+""")
+
+    # When To Use The Tool (addresses  “shift start vs mid-shift” question)
+    with st.expander("🕒 When To Use This Tool (Practical Field Workflow)", expanded=False):
+        st.markdown("""
+**Recommended usage moments**
+- **Shift start / toolbox talk (Preferred):** run a **Baseline WBGT** check (environment only) to set expectations and controls for the shift.
+- **Before task execution:** run an **Adjusted WBGT** assessment for the **specific task/crew/PPE/enclosure/radiant condition** (use the **SEG** idea — Similar Exposure Groups).
+- **Mid‑shift or whenever conditions change:** repeat if **sun/radiant load rises, wind drops, PPE changes, enclosure changes,** or workers report symptoms.
+- **After an event / near‑miss:** document conditions in the **audit log** for learning and prevention.
+
+**If Baseline WBGT is already in “withdrawal” at shift start**
+- Treat it as a **stop‑and‑think trigger**, not an automatic “no work ever” signal.
+- Consider **rescheduling, engineering controls (shade/ventilation), shorter bouts with recovery, additional supervision, medical screening,** and **task re‑planning** before starting.
+- Then run **Adjusted WBGT** separately for the *highest‑risk tasks* (e.g., heavy PPE, confined/enclosed, high radiant zones).
+
+**Crew differences**
+- Do **separate assessments** when PPE or task intensity differs (at least: **(1) light PPE/low radiant** vs **(2) heavy PPE/high radiant** groups).
+- If time is limited, start with the **worst‑case SEG** and apply controls broadly, then refine.
+
+**Inputs that often get questions**
+- **Pressure (kPa):** affects air density and some heat‑exchange terms; changes matter mainly at **high altitude** (or unusual environments). If unsure, keep default or allow auto‑fill.
+- **Globe temperature:** if you have a measured GT, enter it. If not, the app uses a practical baseline assumption that can be overridden.
+""")
+
 
     st.warning("Decision-Support Only. Does Not Replace Site HSE Policy, IH / OH Judgement, Or Medical Protocols.")
 
@@ -451,14 +499,14 @@ if not ss["landing_open"]:
 # Working page header
 # ----------------------------
 st.markdown("""
-<h2 class='ui-strong' style='margin-bottom:0.2rem;'>CHSRMT — Calibrated Heat Stress Risk CHSRMT</h2>
+<h2 class='ui-strong' style='margin-bottom:0.2rem;'>H.A.R.T — HEAT ASSESSMENT & RESPONSE TOOL H.A.R.T</h2>
 <p class='ui-subtle' style='margin-top:0; margin-bottom:0.25rem;'>
-Field-ready decision support for occupational heat stress and heat strain
+Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
 </p>
 """, unsafe_allow_html=True)
 
 st.markdown(
-    "<span class='ui-subtle'>Location → Weather → Baseline → Exposure adjustments → Effective WBGT → HSP (before/after) → Guidance → Logging</span>",
+    "<span class='ui-subtle'>Location → Weather → Baseline → Exposure Adjustments → Adjusted WBGT → HSP (before/after) → Guidance → Logging</span>",
     unsafe_allow_html=True
 )
 
@@ -470,9 +518,10 @@ with st.expander("📌 Quick Reference (WBGT bands + HSP interpretation)", expan
     B = ss.get("thr_B_c", 32.0)
     C = ss.get("thr_C_c", 35.0)
 
-    st.markdown("**WBGT policy bands (Effective WBGT uses these same thresholds):**")
+    st.markdown("**WBGT guideline bands (Adjusted WBGT uses these same thresholds):**")
     st.write(f"🟢 LOW RISK: < {fmt_temp(A, ss.get('units','metric'))}")
     st.write(f"🟠 CAUTION: {fmt_temp(A, ss.get('units','metric'))} – {fmt_temp(B, ss.get('units','metric'))}")
+    st.write(f"🟡 HIGH: {fmt_temp(B, ss.get('units','metric'))} – {fmt_temp(C, ss.get('units','metric'))}")
     st.write(f"🔴 WITHDRAWAL: ≥ {fmt_temp(C, ss.get('units','metric'))}")
 
     st.markdown("**HSP (Heat-Strain Profile):**")
@@ -501,7 +550,7 @@ ss["units"] = "metric" if unit_choice_main.startswith("Metric") else "imperial"
 st.markdown("""
 **HSP (Heat-Strain Profile)** shows **two values**  
 • Environmental HSP (before PPE/enclosure)  
-• Operational HSP (after exposure adjustments)  
+• Operational HSP (after Exposure Adjustments)  
 
 Lower HSP = **Better Cooling Margin**.
 """)
@@ -523,7 +572,7 @@ if ss.get("confirm_reset", False):
                 "city_query","place_name","lat","lon","weather_fetched","weather_provider",
                 # Environmental inputs
                 "db_c","rh_pct","ws_ms","p_kpa","gt_c","twb_c","wb_c",
-                # Baseline / effective WBGT
+                # Baseline / adjusted WBGT
                 "wbgt_raw_c","wbgt_base_c","wbgt_base_frozen","wbgt_eff_c",
                 # Exposure adjustments selections + totals
                 "adj_ppe_pcls","adj_enclosure_c","adj_radiant_c","adj_solar_c","adj_misc_c",
@@ -598,6 +647,7 @@ with st.sidebar:
     st.markdown("**WBGT Risk Band Reference**")
     st.write(f"🟢 LOW RISK: < {fmt_temp(A, ss['band_units'])}")
     st.write(f"🟠 CAUTION: {fmt_temp(A, ss['band_units'])} – {fmt_temp(B, ss['band_units'])}")
+    st.write(f"🟡 HIGH: {fmt_temp(B, ss['band_units'])} – {fmt_temp(C, ss['band_units'])}")
     st.write(f"🔴 WITHDRAWAL: ≥ {fmt_temp(C, ss['band_units'])}")
 
     st.markdown("---")
@@ -816,7 +866,7 @@ st.markdown(
 # BLOCK 5 — COMPUTE NATURAL WET-BULB + WBGT BASELINE (with frozen baseline)
 # ======================================================================
 
-with st.expander("🧮 Baseline WBGT Calculation (Before exposure adjustments)", expanded=False):
+with st.expander("🧮 Baseline WBGT Calculation (Before Exposure Adjustments)", expanded=False):
 
     # Pull current internal values (always in °C internally)
     db_c  = float(ss["db_c"])
@@ -1008,7 +1058,7 @@ with col4:
 # BLOCK 5B — APPLY PENALTIES SAFELY (unit-aware, clamped, no negatives)
 # ======================================================================
 
-st.markdown("## 🚀 Apply Exposure Adjustments & Compute Effective WBGT")
+st.markdown("## 🚀 Apply Exposure Adjustments & Compute Adjusted WBGT")
 
 if st.button("Apply Adjustments & Compute"):
 
@@ -1033,7 +1083,7 @@ if st.button("Apply Adjustments & Compute"):
         total_penalty_c = ppe_c + encl_c + rad_c + ahoc_c
         total_penalty_c = min(total_penalty_c, 10.0)
 
-        # Effective WBGT (°C)
+        # Adjusted WBGT (°C)
         wbgt_eff_c = float(wbgt_base_c) + float(total_penalty_c)
 
         # Persist results
@@ -1062,7 +1112,7 @@ if st.button("Apply Adjustments & Compute"):
         # ------------------------------------------------------------
         st.success(
             f"Exposure Adjustments Applied ({penalty_str}) → "
-            f"Effective WBGT = {wbgt_display}. "
+            f"Adjusted WBGT = {wbgt_display}. "
             "Scroll down for Heat-Stress Classification."
         )
 
@@ -1148,7 +1198,7 @@ with st.expander("🎯 Heat-Stress Thresholds (NIOSH / OSHA Reference)", expande
             "to provide a conservative safety margin."
         )
 # ======================================================================
-# BLOCK 7 — HEAT STRESS RISK CLASSIFICATION (WBGT policy + HSP + Wet-Bulb)
+# BLOCK 7 — HEAT STRESS RISK CLASSIFICATION (WBGT guideline + HSP + Wet-Bulb)
 # Single-screen compact dashboard
 # FIX (Feb 2026):
 # - KPI cards render FIRST (phone users see readings first)
@@ -1280,10 +1330,10 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("## 🧭 Heat-Stress Snapshot (WBGT Policy + HSP + Wet-Bulb)")
+st.markdown("## 🧭 Heat-Stress Snapshot (WBGT Guideline + HSP + Wet-Bulb)")
 
 # -----------------------------
-# WBGT policy banding (4-level)
+# WBGT guideline banding (4-level)
 # -----------------------------
 def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
     if wbgt_eff_c < A:
@@ -1298,7 +1348,7 @@ wbgt_eff = ss.get("wbgt_eff_c", None)
 wbgt_base = ss.get("wbgt_base_frozen", None)
 
 if wbgt_eff is None:
-    st.info("Press **Apply Adjustments & Compute** to calculate Effective WBGT, HSP, and guidance.")
+    st.info("Press **Apply Adjustments & Compute** to calculate Adjusted WBGT, HSP, and guidance.")
     st.stop()
 
 A = float(ss.get("thr_A_c", 29))
@@ -1441,7 +1491,7 @@ if wbgt_env is not None:
 # Override logic (conservative): policy first; HSP only if more protective
 # -----------------------------
 use_phys = st.checkbox(
-    "Use HSP only when it is more protective than WBGT policy",
+    "Use HSP only when it is more protective than WBGT guideline",
     value=True,
     key="use_phys_override_block7"
 )
@@ -1489,7 +1539,7 @@ f"""
 <div class="kpi-grid">
 
   <div class="kpi-card" style="border-left:7px solid {band_color};">
-    <div class="kpi-label">Effective WBGT (Policy)</div>
+    <div class="kpi-label">Adjusted WBGT (Guideline)</div>
     <div class="kpi-value">{wbgt_disp}</div>
     <div class="kpi-sub">{icon} <b>{wbgt_policy_band}</b> {pill}</div>
     <div class="kpi-foot">{wbgt_policy_msg}<br>Exposure adjustments: <b>{pen_disp}</b></div>
@@ -1556,7 +1606,7 @@ st.markdown(
     f"""
 <div style="padding:10px;border-radius:12px;background:#ffffff;border-left:7px solid {r_color};border:1px solid rgba(0,0,0,0.06);">
   <b style="font-size:16px;color:{r_color};line-height:1.15;">{r_icon} {r_label}</b><br>
-  <span style="color:var(--text-color);">Effective WBGT: <b>{wbgt_disp}</b></span><br>
+  <span style="color:var(--text-color);">Adjusted WBGT: <b>{wbgt_disp}</b></span><br>
   <span style="color:var(--text-color);">HSP: <b>{hsp_show}</b></span><br>
   <span class="ui-muted" style="font-size:0.92rem;line-height:1.15;">
     Use WBGT for policy alignment. Use HSP as a cooling-capacity cross-check when it is more protective.
@@ -1610,7 +1660,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-with st.expander("ℹ️ HSP Details (Tap to Expand)", expanded=False):
+with st.expander("ℹ️ HSP Details (Tap To Expand)", expanded=False):
     st.markdown("**HSP Field Guide**")
     st.markdown(
         """
@@ -1629,7 +1679,7 @@ with st.expander("ℹ️ HSP Details (Tap to Expand)", expanded=False):
             unsafe_allow_html=True
         )
 
-with st.expander("🧑‍🏭 Worker Messages (Tap to Expand)", expanded=False):
+with st.expander("🧑‍🏭 Worker Messages (Tap To Expand)", expanded=False):
     st.markdown("**English (simple)**")
     st.markdown(
         """
@@ -1716,7 +1766,7 @@ if (
             except Exception:
                 pass
 
-    # Display-units for Effective WBGT in the saved record
+    # Display-units for Adjusted WBGT in the saved record
     units_mode = ss.get("units", "metric")  # expected: "metric" or "imperial"
     if units_mode == "imperial":
         wbgt_eff_disp_val = (wbgt_eff_c * 9/5) + 32
@@ -1740,8 +1790,8 @@ if (
         "Exposure adjustment total (°C)": f"{total_penalty_c:.1f}",
 
         # Save both canonical and display-facing
-        "Effective WBGT (°C)": f"{wbgt_eff_c:.1f}",
-        f"Effective WBGT ({wbgt_eff_disp_unit})": f"{wbgt_eff_disp_val:.1f}",
+        "Adjusted WBGT (°C)": f"{wbgt_eff_c:.1f}",
+        f"Adjusted WBGT ({wbgt_eff_disp_unit})": f"{wbgt_eff_disp_val:.1f}",
 
         "HSP": f"{float(hsp_val):.2f}" if hsp_val is not None else "",
         "Final Risk": risk_final,
@@ -1749,7 +1799,7 @@ if (
 
     ss["audit_log"].append(log_entry)
     ss["last_saved_id"] = current_save_id
-    st.success(f"Saved to Audit History. Effective WBGT: {wbgt_eff_disp_val:.1f} {wbgt_eff_disp_unit}")
+    st.success(f"Saved to Audit History. Adjusted WBGT: {wbgt_eff_disp_val:.1f} {wbgt_eff_disp_unit}")
 
 # -----------------------------
 # Audit Log Display & Export
