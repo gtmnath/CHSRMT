@@ -15,7 +15,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v2.0.3-HART"
+APP_VERSION = "v1.9.24i"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -1616,7 +1616,17 @@ st.markdown(
 st.markdown("### 👷‍♂️ Supervisor Actions (Cooling Capacity & Process-Relevant)")
 
 def _ul(items):
-    return "<ul style=\"margin:0.35rem 0 0.25rem 1.1rem; color:#111; font-size:0.98rem; line-height:1.35;\">" + "".join([f"<li style=\"margin:0.15rem 0;\">{x}</li>" for x in items]) + "</ul>"
+    if not items:
+        return ""
+    # Inline styles are intentional for mobile reliability (prevents theme overrides)
+    return (
+        "<ul style=\"margin:0.35rem 0 0.25rem 1.1rem; padding-left:0.2rem; color:#0b2239; font-size:0.98rem; line-height:1.35;\">"
+        + "".join([
+            f"<li style=\"margin:0.15rem 0; color:#0b2239;\"><span style=\"color:#0b2239;\">{x}</span></li>"
+            for x in items
+        ])
+        + "</ul>"
+    )
 
 if final_risk == "LOW":
     hydration_items = ["Encourage Regular Drinking (Cool Water)", "~250 mL Every 30 minutes", "Do Not Exceed ~1.5 L/hour"]
