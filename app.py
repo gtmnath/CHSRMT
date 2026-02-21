@@ -29,6 +29,21 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+/* ---------- Color scheme variables (mobile dark-mode safe) ---------- */
+:root{
+  --card-bg: #ffffff;
+  --card-fg: #0b2239;
+  --card-muted: #334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --card-bg: #0b1220;
+    --card-fg: #e5e7eb;
+    --card-muted: #cbd5e1;
+  }
+}
+
+
 /* ---------- Typography ---------- */
 h1 {font-size: 1.40rem !important; margin-bottom: 0.25rem;}
 h2 {font-size: 1.20rem !important; margin-bottom: 0.20rem;}
@@ -214,7 +229,7 @@ div[data-testid="stHorizontalBlock"] {
 /* --- Mobile visibility fix: ensure text is visible inside white cards (risk summary / supervisor actions) --- */
 .white-card, .white-card * { color: #0b2239 !important; }
 .white-card .ui-muted { color: #334155 !important; }  /* muted text inside white cards */
-.sa-card, .sa-card * { color: #0b2239 !important; }
+.sa-card, .sa-card * { color: var(--card-fg) !important; }
 .kpi-card, .kpi-card * { color: #0b2239 !important; }
 /* keep colored emphasis when explicitly set inline */
 
