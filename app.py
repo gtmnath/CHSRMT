@@ -2,7 +2,8 @@
 # BLOCK 1 — Imports, page config, utilities, session defaults
 # ======================================================================
 """
-CHSRMT — Proprietary Evaluation License
+HART — Heat Assessment & Response Tool
+# Proprietary Evaluation License
 
 Copyright (c) 2025
 Dr. Gummanur T. Manjunath, MD
@@ -2071,9 +2072,9 @@ st.markdown("<div style='height:72px;'></div>", unsafe_allow_html=True)
 
 st.markdown("---")
 
-with st.expander("ℹ About CHSRMT • Disclaimer • Feedback", expanded=False):
+with st.expander("ℹ About HART • Disclaimer • Feedback", expanded=False):
     st.markdown(f"""
-**© 2026 Dr. Gummanur T. Manjunath — CHSRMT® (Calibrated Heat Stress Risk CHSRMT)**
+**© 2026 Dr. Gummanur T. Manjunath — HART® (Calibrated Heat Stress Risk HART)**
 
 Field Heat-Stress Decision Support System — Integrating **WBGT • MWL • HSP**  
 *(Instrument TWL input supported where available)*
