@@ -419,6 +419,15 @@ ss_default("audit_log", [])
 # ----------------------------
 ss_default("landing_open", False)
 
+# Safety latch: if the user has already computed (baseline frozen or effective WBGT present),
+# do NOT drop back to the Welcome Gate on a normal Streamlit rerun.
+try:
+    if (ss.get("wbgt_base_frozen") is not None) or (ss.get("wbgt_eff_c") is not None):
+        ss["landing_open"] = True
+except Exception:
+    pass
+
+
 
 if not ss["landing_open"]:
     st.markdown("""
