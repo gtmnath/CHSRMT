@@ -283,6 +283,22 @@ ss_default("MWL_VEH_W", 12.0)
 ss_default("MWL_RAD_W", 10.0)
 ss_default("MWL_ADH_W",  8.0)
 
+
+
+
+def _sanitize_temp_c(x):
+    """Guardrail against unit mistakes (e.g., Kelvin accidentally treated as °C)."""
+    try:
+        v = float(x)
+    except Exception:
+        return x
+    # Kelvin-like values
+    if v > 150.0:
+        v = v - 273.15
+    # Occasionally values get scaled x10
+    if v > 100.0:
+        v = v / 10.0
+    return v
 def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt_c: float) -> float:
     """Estimate MWL (cooling capacity) in W/m².
 
@@ -756,6 +772,8 @@ st.markdown("## 🌡 Environmental Inputs")
 # -----------------------------------------
 fetch_btn = st.button("🌤 Retrieve Weather (Open-Meteo)")
 
+st.caption("Enter Dry Bulb, RH, Wind, and Globe manually — or tap **Retrieve Weather** to prefill from Open‑Meteo. After retrieval, adjust **Globe** to reflect Sun/radiant load. Pressure is optional; leave default unless you know local station pressure / high elevation.")
+
 if fetch_btn:
     lat = ss.get("lat", None)
     lon = ss.get("lon", None)
@@ -828,18 +846,18 @@ with col3:
 # --- Pressure ---
 with col4:
     if ss["units"] == "metric":
-        ss["p_kpa"] = st.number_input("Pressure (kPa)", value=float(ss.get("p_kpa", 101.3)))
+        ss["p_kpa"] = st.number_input("Pressure (kPa)", min_value=70.0, max_value=110.0, value=float(ss.get("p_kpa", 101.3)), step=0.1, help="Default is sea level (~101.3 kPa). Enter local pressure if known or if working at higher elevation; otherwise leave default.")
     else:
-        p_inhg = st.number_input("Pressure (inHg)", value=float(kpa_to_inhg(ss.get("p_kpa", 101.3))))
+        p_inhg = st.number_input("Pressure (inHg)", min_value=20.0, max_value=33.0, value=float(kpa_to_inhg(ss.get("p_kpa", 101.3))), step=0.05, help="Default is sea level (~29.92 inHg). Enter local pressure if known; otherwise leave default.")
         ss["p_kpa"] = inhg_to_kpa(p_inhg)
 
-# --- Globe temperature ---
 with col5:
     if ss["units"] == "metric":
         ss["gt_c"] = st.number_input("Globe Temp (°C)", value=float(ss.get("gt_c", ss.get("db_c", 30.0) + 3.0)))
     else:
         gt_f = st.number_input("Globe Temp (°F)", value=float(c_to_f(ss.get("gt_c", ss.get("db_c", 30.0) + 3.0))))
         ss["gt_c"] = f_to_c(gt_f)
+
 
 # -----------------------------
 # Mark environment dirty ONLY if something actually changed
@@ -1351,7 +1369,7 @@ def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
         return ("🟠", "CAUTION", "Increase supervision. Enforce hydration and basic work–rest cycles.", 1, "#f39c12")
     if wbgt_eff_c < C:
         return ("🔴", "HIGH STRAIN", "Reduce exposure; Move to cooler/shaded areas; Use ventilation/A/C; Enforce short work–rest cycles.", 2, "#e74c3c")
-    return ("⛔", "WITHDRAWAL", "Stop routine work. Only essential tasks with strict limits and close monitoring.", 3, "#8e0000")
+    return ("⛔", "WITHDRAWAL", "Stop routine work. Only essential tasks with strict limits and close monitoring.", 3, "#800000")
 
 wbgt_eff = ss.get("wbgt_eff_c", None)
 wbgt_base = ss.get("wbgt_base_frozen", None)
