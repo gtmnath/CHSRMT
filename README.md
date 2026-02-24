@@ -1,8 +1,9 @@
-# CHSRMT
-Calibrated Heat Stress Risk Management Tool — Field WBGT + HSP Decision Support
-## ⚠️ Weather Data Source and Interpretation
+# HART (Heat Assessment and Response Tool)
+Formerly: CHSRMT (Calibrated Heat Stress Risk Management Tool)
+This repository has been renamed to HART to better reflect its supervisory
+decision-support positioning. Core computational logic remains unchanged.
 
-CHSRMT uses **Open-Meteo** as a global numerical weather reanalysis and forecast source to provide *baseline environmental inputs* when on-site measurements are unavailable.
+HART uses **Open-Meteo** as a global numerical weather reanalysis and forecast source to provide *baseline environmental inputs* when on-site measurements are unavailable.
 
 **Important considerations:**
 - Open-Meteo values represent **area-averaged modeled conditions**, not point measurements from a specific workplace.
@@ -16,4 +17,4 @@ CHSRMT uses **Open-Meteo** as a global numerical weather reanalysis and forecast
 - Use **on-site measured dry bulb, wet bulb, globe temperature, and air velocity** whenever available.
 - Weather-fetched values should be treated as **screening or fallback inputs**, not replacements for local industrial hygiene measurements.
 
-CHSRMT is designed to **interpret environmental heat in relation to human cooling capacity**, not to replace workplace heat measurements. Divergence between regional weather data and local site conditions is expected and clinically meaningful.
+HART is designed to **interpret environmental heat in relation to human cooling capacity**, not to replace workplace heat measurements. Divergence between regional weather data and local site conditions is expected and clinically meaningful.
