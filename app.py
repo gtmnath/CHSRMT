@@ -2074,9 +2074,9 @@ st.markdown("---")
 
 with st.expander("ℹ About HART • Disclaimer • Feedback", expanded=False):
     st.markdown(f"""
-**© 2026 Dr. Gummanur T. Manjunath — HART® (Calibrated Heat Stress Risk HART)**
+**© 2026 Dr. Gummanur T. Manjunath — Developer of HART® (Heat Assessment & Response Tool)**
 
-Field Heat-Stress Decision Support System — Integrating **WBGT • MWL • HSP**  
+Field Heat-Stress Decision Support System integrating **WBGT • MWL • HSP**  
 *(Instrument TWL input supported where available)*
 
 **Decision-Support Only:**  
