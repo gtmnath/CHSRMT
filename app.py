@@ -16,13 +16,24 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.24i"
+APP_VERSION = "v1.9.31"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ============================================================
+# HART TITLE HEADER
+# ============================================================
+
+st.markdown("""
+<h2 style='margin-bottom:0px;'>HART — Heat Assessment & Response Tool</h2>
+<div style='font-size:15px;color:#2f3e4e;font-weight:700;'>Field Heat-Stress Decision Support System</div>
+""", unsafe_allow_html=True)
+
+st.markdown("---")
 
 # ----------------------------
 # Global CSS (compact + mobile-fit improvements)
@@ -247,6 +258,13 @@ def ss_default(key, val):
     if key not in ss:
         ss[key] = val
 
+def go_to_mode_select():
+    """Return to the launch page reliably without wiping the app state."""
+    ss["app_mode"] = None
+    ss["landing_open"] = False
+    ss["confirm_reset"] = False
+    st.rerun()
+
 # ----------------------------
 # Unit conversion helpers
 # ----------------------------
@@ -416,21 +434,64 @@ ss_default("wbgt_instr", 0.0)
 ss_default("audit_log", [])
 
 # ----------------------------
-# Landing gate
+# Launch mode + landing gate
 # ----------------------------
-ss_default("landing_open", False)
+ss_default("app_mode", None)        # "field" or "professional"
+ss_default("landing_open", False)   # professional-mode welcome gate latch
 
 # Safety latch: if the user has already computed (baseline frozen or effective WBGT present),
 # do NOT drop back to the Welcome Gate on a normal Streamlit rerun.
 try:
     if (ss.get("wbgt_base_frozen") is not None) or (ss.get("wbgt_eff_c") is not None):
+        if ss.get("app_mode") is None:
+            ss["app_mode"] = "field"
         ss["landing_open"] = True
 except Exception:
     pass
 
+if ss.get("app_mode") is None:
+    st.markdown("""
+    <h2 style='margin-bottom:0.2rem;'>HART — Heat Assessment & Response Tool</h2>
+    <p class='ui-strong' style='margin-top:0; color:#2f3e4e; font-weight:800;'>
+    Choose how you want to use HART today
+    </p>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div style="height:0.35rem;"></div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="welcome-box" style="color: rgba(255,255,255,0.96) !important; padding-top:0.85rem; padding-bottom:0.95rem;">
+        <h2 style="margin-bottom:0.15rem; color: rgba(255,255,255,0.98) !important;">
+          ☀️ Select User Mode
+        </h2>
+        <p style="margin-top:0.10rem; margin-bottom:0; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
+          <span style="font-weight:800;">Field Supervisor Mode</span> opens directly to inputs, compute, and supervisor guidance.<br>
+          <span style="font-weight:800;">Professional Analysis Mode</span> opens the full HART workflow with welcome page, references, and deeper interpretation.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div style="height:0.25rem;"></div>', unsafe_allow_html=True)
+    m1, m2 = st.columns(2)
+    with m1:
+        st.markdown("**👷 Field Supervisor Mode**")
+        st.caption("Fast entry to units, inputs, compute, and supervisor actions.")
+        if st.button("Open Field Supervisor Mode", type="primary", use_container_width=True):
+            ss["app_mode"] = "field"
+            ss["landing_open"] = True
+            st.rerun()
+    with m2:
+        st.markdown("**🧪 Professional Analysis Mode**")
+        st.caption("Opens the welcome page, definitions, references, and the full professional workflow.")
+        if st.button("Open Professional Analysis Mode", use_container_width=True):
+            ss["app_mode"] = "professional"
+            ss["landing_open"] = False
+            st.rerun()
+
+    st.stop()
 
 
-if not ss["landing_open"]:
+if ss.get("app_mode") == "professional" and not ss["landing_open"]:
     st.markdown("""
     <h2 style='margin-bottom:0.2rem;'>H.A.R.T — Heat Assessment & Response Tool</h2>
     <p class='ui-strong' style='margin-top:0; opacity:0.95;'>
@@ -450,14 +511,14 @@ if not ss["landing_open"]:
           <span style="font-weight:800;">Heat Strain Profile (HSP)</span> = Human Cooling Ability vs Heat Load Using Cooling Capacity (W/m²).
         </p>
         <p style="margin-bottom:0; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
-          <span style="font-weight:800;">Workflow:</span> Inputs → Baseline WBGT → Exposure Adjustments → Adjusted WBGT → HSP → Guidance → Logging
+          <span style="font-weight:800;">Workflow:</span> Inputs → Baseline WBGT → Worksite Additional Factors → Adjusted WBGT → HSP → Guidance → Logging
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("### What This Tool Does")
     st.markdown("""
-- Computes **Baseline WBGT** and **Adjusted WBGT** (After Clothing/PPE, Vehicle/Enclosure, Radiant/Hot Surfaces, And Ad-Hoc Adjustments)
+- Computes **Baseline WBGT** and **Adjusted WBGT** (after clothing/PPE, vehicle/enclosure, radiant/hot-surface, and site-specific additional factors)
 - Uses **Instrument TWL (W/m²)Readings** *if available* (sites with TWL instruments can enter the reading)
 - Estimates **MWL (W/m²)** when an instrument TWL reading is not available
 - Computes **HSP** (Heat-Strain Profile) to express **Human Cooling Margin** under current conditions
@@ -494,7 +555,7 @@ if not ss["landing_open"]:
         st.markdown("""
 **Sources of Screening Thresholds and Adjustment Concepts (High-Level):**
 - **WBGT**: widely used heat-stress screening index(as PEL or OEL) in occupational hygiene (commonly referenced in **ACGIH TLV®/Action Limit**, **NIOSH/OSHA guidance**, and **ISO heat-stress frameworks**).
-- **Exposure Adjustments**: Practical correction concepts aligned with published guidance on **clothing/PPE impacts, air movement, radiant heat, and enclosure effects**.
+- **Worksite Additional Factors**: Practical correction concepts aligned with published guidance on **clothing/PPE impacts, air movement, radiant heat, and enclosure effects**.
 - **HSP (Heat-Strain Profile)**: a *Physiology-Facing* indicator that compares estimated **cooling capacity (MWL proxy)** vs **heat load**, to help supervisors interpret “how tight the cooling margin is” beyond a single index.
 
 **Note:** This app is a decision-support prototype. Site policy, IH/OH judgement, and medical protocols always override.
@@ -537,17 +598,38 @@ if not ss["landing_open"]:
 # ----------------------------
 # Working page header
 # ----------------------------
-st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>H.A.R.T — Field Heat-Stress Assessment Dashboard</h2>
-<p class='ui-subtle' style='margin-top:0; margin-bottom:0.25rem;'>
-Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
+if ss.get("app_mode") == "field":
+    page_title = "HART — Heat Assessment & Response Tool"
+    page_subtitle = "Field Supervisor Mode — rapid input → compute → supervisor action guidance"
+    workflow_line = "Units → Location / Weather → Inputs → Baseline → Worksite Additional Factors → Adjusted WBGT → HSP → Supervisor Actions → Logging"
+else:
+    page_title = "HART — Heat Assessment & Response Tool"
+    page_subtitle = "Professional Analysis Mode — field-ready decision support for occupational heat stress and heat strain"
+    workflow_line = "Location → Weather → Baseline → Worksite Additional Factors → Adjusted WBGT → HSP (before/after) → Guidance → Logging"
+
+st.markdown(f"""
+    <h2 style='margin-bottom:0.2rem;'>{page_title}</h2>
+<p class='ui-subtle' style='margin-top:0; margin-bottom:0.25rem; color:#2f3e4e; font-weight:700;'>
+{page_subtitle}
 </p>
 """, unsafe_allow_html=True)
 
 st.markdown(
-    "<span class='ui-subtle'>Location → Weather → Baseline → Exposure Adjustments → Adjusted WBGT → HSP (before/after) → Guidance → Logging</span>",
+    f"<span class='ui-subtle'>{workflow_line}</span>",
     unsafe_allow_html=True
 )
+
+mode_c1, mode_c2 = st.columns([1,1])
+with mode_c1:
+    if st.button("↩ Change User Mode", use_container_width=True, key="change_user_mode_top"):
+        go_to_mode_select()
+with mode_c2:
+    if ss.get("app_mode") == "professional":
+        if st.button("ℹ️ Reopen Welcome Page", use_container_width=True, key="reopen_welcome_page_top"):
+            ss["landing_open"] = False
+            st.rerun()
+    else:
+        st.markdown("<span style='color:#3f4f60;font-weight:600;'>Field Supervisor Mode keeps the same calculations and shows the faster workflow.</span>", unsafe_allow_html=True)
 
 # ----------------------------
 # Quick Reference (WBGT bands + HSP) — mobile friendly (no sidebar needed)
@@ -568,6 +650,11 @@ with st.expander("📌 Quick Reference (WBGT bands + HSP interpretation)", expan
     st.write("🟠 **0.80 – 0.99** → Marginal heat balance (close monitoring)")
     st.write("🔴 **HSP ≥ 1.00** → Heat gain likely exceeds heat loss (rapid risk escalation)")
 
+    st.markdown("**What HSP means in practice:**")
+    st.write("• Environmental HSP = before worksite additional factors")
+    st.write("• Operational HSP = after worksite additional factors")
+    st.write("• Lower HSP = better cooling margin")
+
     st.caption("Tip: On phones, the sidebar is hidden automatically. All key references are here.")
 
 
@@ -586,19 +673,19 @@ unit_choice_main = st.radio(
 
 ss["units"] = "metric" if unit_choice_main.startswith("Metric") else "imperial"
 
-st.markdown("""
-**HSP (Heat-Strain Profile)** shows **two values**  
-• Environmental HSP (before PPE/enclosure)  
-• Operational HSP (after Exposure Adjustments)  
-
-Lower HSP = **Better Cooling Margin**.
-""")
+st.markdown(
+    "<div style='color:#25384a;font-weight:650; line-height:1.5; margin:0.20rem 0 0.35rem 0;'>"
+    "Enter site measured values in the <b>Environmental Inputs</b> fields to replace the default values; "
+    "otherwise, retrieve local weather (Open-Meteo) through the <b>Location Search</b> function."
+    "</div>",
+    unsafe_allow_html=True
+)
 
 # -------------------------
 # Reset Assessment (main page, confirmed)
 # -------------------------
 st.markdown("---")
-if st.button("🔄 Reset Assessment (Clear Current Inputs & Results)"):
+if st.button("🔄 Reset Assessment (Clear Current Inputs & Results)", key="main_reset_btn"):
     ss["confirm_reset"] = True
 
 if ss.get("confirm_reset", False):
@@ -629,7 +716,11 @@ if ss.get("confirm_reset", False):
                 if k in ss:
                     del ss[k]
 
-            # Clear welcome latch so it truly returns to fresh start
+            # Return to the appropriate entry point after reset
+            if ss.get("app_mode") == "professional":
+                ss["landing_open"] = False
+            elif ss.get("app_mode") == "field":
+                ss["landing_open"] = True
 
             del ss["confirm_reset"]
             st.rerun()
@@ -780,9 +871,9 @@ st.markdown("## 🌡 Environmental Inputs")
 # -----------------------------------------
 # Retrieve live weather
 # -----------------------------------------
-fetch_btn = st.button("🌤 Retrieve Weather (Open-Meteo)")
-
-st.caption("Enter Dry Bulb, RH, Wind, and Globe manually — or tap **Retrieve Weather** to prefill from Open‑Meteo. After retrieval, adjust **Globe** to reflect Sun/radiant load. Pressure is optional; leave default unless you know local station pressure / high elevation.")
+fetch_btn = False
+if ss.get("app_mode") != "field":
+    fetch_btn = st.button("🌤 Retrieve Local Weather")
 
 if fetch_btn:
     lat = ss.get("lat", None)
@@ -894,16 +985,12 @@ else:
         # leave env_dirty as-is (Block 5 will clear it after handling)
         ss["env_dirty"] = bool(ss.get("env_dirty", False))
 
-st.markdown(
-    "<span style='color:#222;'>If you entered weather manually, adjust Globe Temperature to reflect Sun and radiant load.</span>",
-    unsafe_allow_html=True
-)
 
 # ======================================================================
-# BLOCK 5 — COMPUTE NATURAL WET-BULB + WBGT BASELINE (with frozen baseline)
+# BLOCK 5 — OPTIONAL LOOKUP (Baseline WBGT + Instrument Reference)
 # ======================================================================
 
-with st.expander("🧮 Baseline WBGT Calculation (Before Exposure Adjustments)", expanded=False):
+with st.expander("🧭 Optional Lookup (Baseline WBGT + Instrument Reference)", expanded=False):
 
     # Pull current internal values (always in °C internally)
     db_c  = float(ss["db_c"])
@@ -978,7 +1065,7 @@ with st.expander("🧮 Baseline WBGT Calculation (Before Exposure Adjustments)",
     # ---------------------------------------------------------------
     # Display baseline metrics
     # ---------------------------------------------------------------
-    st.subheader("Computed Baseline (No exposure adjustments applied)")
+    st.subheader("Computed Baseline (Before additional worksite factors)")
     c1, c2, c3 = st.columns(3)
     c1.metric("Natural Wet-Bulb", fmt_temp(twb_c, ss["units"]))
     c2.metric("WBGT Baseline (Frozen)", fmt_temp(ss["wbgt_base_frozen"], ss["units"]))
@@ -987,33 +1074,28 @@ with st.expander("🧮 Baseline WBGT Calculation (Before Exposure Adjustments)",
         f"{ws_ms:.1f} m/s" if ss["units"] == "metric" else f"{ms_to_mph(ws_ms):.1f} mph"
     )
 
-# ======================================================================
-# BLOCK 5A — Instrument Reference (Calibration Mode)
-# (Used ONLY for HSP calibration; does NOT change WBGT baseline logic)
-# ======================================================================
-
-st.markdown(
-    "<span style='color:#222;'>Optional: Enter instrument values to display Heat Strain Profile (HSP). These values do NOT affect WBGT baseline or exposure adjustments.</span>",
-    unsafe_allow_html=True
-)
-
-colA, colB = st.columns(2)
-
-with colA:
-    ss["twl_measured"] = st.number_input(
-        "Instrument TWL (W/m²)",
-        min_value=0.0,
-        value=float(ss.get("twl_measured", 0.0)),
-        step=5.0
+    st.markdown("---")
+    st.markdown("**Instrument Reference (Optional)**")
+    st.markdown(
+        "<span style='color:#222;'>Optional: Enter instrument TWL or WBGT values for side-by-side reference. These values do <b>not</b> change the modelled baseline or worksite additional factors.</span>",
+        unsafe_allow_html=True
     )
 
-with colB:
-    ss["wbgt_instr"] = st.number_input(
-        "Instrument WBGT (°C)",
-        min_value=0.0,
-        value=float(ss.get("wbgt_instr", 0.0)),
-        step=0.1
-    )
+    colA, colB = st.columns(2)
+    with colA:
+        ss["twl_measured"] = st.number_input(
+            "Instrument TWL (W/m²)",
+            min_value=0.0,
+            value=float(ss.get("twl_measured", 0.0)),
+            step=5.0
+        )
+    with colB:
+        ss["wbgt_instr"] = st.number_input(
+            "Instrument WBGT (°C)",
+            min_value=0.0,
+            value=float(ss.get("wbgt_instr", 0.0)),
+            step=0.1
+        )
 
 # Flag if calibration is available (for Block 7 HSP display)
 ss["hsp_calib_ready"] = bool(ss.get("twl_measured", 0.0) > 0 and ss.get("wbgt_instr", 0.0) > 0)
@@ -1027,7 +1109,7 @@ VEHICLE_PRESETS = {"None": 0.0, "Open": 1.0, "Enclosed": 2.0, "Poorly ventilated
 RADIANT_PRESETS = {"None": 0.0, "Hot surfaces": 2.0, "Direct radiant": 4.0, "Extreme radiant": 5.0}
 ADHOC_PRESETS   = {"None": 0.0, "Minor": 1.0, "Moderate": 2.0, "Severe": 4.0}
 
-st.markdown("## 🔥 Exposure adjustments")
+st.markdown("## 🔥 Worksite Additional Factors (PPE, Enclosure, Radiant/Solar Heat, Other Site Factors)")
 
 def delta_label(dc: float) -> str:
     return f"{dc:.1f}°C" if ss["units"] == "metric" else f"{dc * 9/5:.1f}°F"
@@ -1057,7 +1139,7 @@ col1, col2, col3, col4 = st.columns(4)
 
 # ---------------- PPE ----------------
 with col1:
-    st.subheader("Clothing / PPE")
+    st.subheader("PPE / Clothing")
     labels = {f"{k} (+{delta_label(v)})": float(v) for k, v in PPE_PRESETS.items()}
     choice = st.selectbox("", list(labels.keys()), key="ppe_preset")
     preset_c = float(labels[choice])
@@ -1075,7 +1157,7 @@ with col2:
 
 # ---------------- Radiant ----------------
 with col3:
-    st.subheader("Radiant / Hot Surfaces")
+    st.subheader("Radiant / Solar Heat")
     labels = {f"{k} (+{delta_label(v)})": float(v) for k, v in RADIANT_PRESETS.items()}
     choice = st.selectbox("", list(labels.keys()), key="rad_preset")
     preset_c = float(labels[choice])
@@ -1084,7 +1166,7 @@ with col3:
 
 # ---------------- Adhoc ----------------
 with col4:
-    st.subheader("Ad-hoc / Site-specific")
+    st.subheader("Other Site Factors")
     labels = {f"{k} (+{delta_label(v)})": float(v) for k, v in ADHOC_PRESETS.items()}
     choice = st.selectbox("", list(labels.keys()), key="adhoc_preset")
     preset_c = float(labels[choice])
@@ -1095,9 +1177,10 @@ with col4:
 # BLOCK 5B — APPLY PENALTIES SAFELY (unit-aware, clamped, no negatives)
 # ======================================================================
 
-st.markdown("## 🚀 Apply Exposure Adjustments & Compute Adjusted WBGT")
+st.markdown("## 🚀 Apply Worksite Additional Factors & Compute")
+st.caption("Complete environmental inputs, then apply worksite additional factors and compute to display the heat status, supervisor actions, and snapshot numbers.")
 
-if st.button("Apply Adjustments & Compute"):
+if st.button("Apply Worksite Additional Factors & Compute"):
 
     wbgt_base_c = ss.get("wbgt_base_frozen", None)  # use frozen baseline
 
@@ -1148,7 +1231,7 @@ if st.button("Apply Adjustments & Compute"):
         # Display success message
         # ------------------------------------------------------------
         st.success(
-            f"Exposure Adjustments Applied ({penalty_str}) → "
+            f"Worksite Additional Factors Applied ({penalty_str}) → "
             f"Adjusted WBGT = {wbgt_display}. "
             "Scroll down for Heat-Stress Classification."
         )
@@ -1158,7 +1241,7 @@ if st.button("Apply Adjustments & Compute"):
 # BLOCK 6 — NIOSH / OSHA WBGT & Wet-Bulb Thresholds (with Acclimatization)
 # ======================================================================
 
-with st.expander("🎯 Heat-Stress Thresholds (NIOSH / OSHA Reference)", expanded=False):
+with st.expander("🎯 Heat-Stress Thresholds / Reference (Tap To Expand)", expanded=False):
 
     # Worker acclimatization toggle
     accl_status = st.radio(
@@ -1374,18 +1457,22 @@ st.markdown("## 🧭 Heat-Stress Snapshot (WBGT Guideline + HSP + Wet-Bulb)")
 # -----------------------------
 def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
     if wbgt_eff_c < A:
-        return ("🟢", "LOW RISK", "Routine/Normal work acceptable. Maintain hydration and routine supervision.", 0, "#2ecc71")
+        return ("🟢", "LOW RISK", "Routine work acceptable. Maintain hydration and routine supervision.", 0, "#2ecc71")
     if wbgt_eff_c < B:
         return ("🟠", "CAUTION", "Increase supervision. Enforce hydration and basic work–rest cycles.", 1, "#f39c12")
     if wbgt_eff_c < C:
         return ("🔴", "HIGH STRAIN", "Reduce exposure; Move to cooler/shaded areas; Use ventilation/A/C; Enforce short work–rest cycles.", 2, "#e74c3c")
-    return ("⛔", "WITHDRAWAL", "Stop routine work. Only essential tasks with strict limits and close monitoring.", 3, "#800000")
+    return ("⛔", "WITHDRAWAL", "Avoid routine work. Only essential tasks with strict limits and close monitoring.", 3, "#800000")
 
 wbgt_eff = ss.get("wbgt_eff_c", None)
 wbgt_base = ss.get("wbgt_base_frozen", None)
 
+if ss.get("app_mode") == "field" and not ss.get("penalties_applied", False):
+    st.info("Complete environmental inputs, then apply worksite additional factors and compute to see the risk band and supervisor actions.")
+    st.stop()
+
 if wbgt_eff is None:
-    st.info("Press **Apply Adjustments & Compute** to calculate Adjusted WBGT, HSP, and guidance.")
+    st.info("Press **Apply Additional Factors & Compute** to calculate Adjusted WBGT, HSP, and guidance.")
     st.stop()
 
 A = float(ss.get("thr_A_c", 29))
@@ -1566,45 +1653,8 @@ else:
 
 hsp_value_disp = f"{hsp:.2f}" if hsp is not None else "—"
 hsp_sub = f"{h_icon} {h_band}" if hsp is not None else "Baseline WBGT not available (HSP not computed)"
-hsp_foot = f"Operational cooling capacity: {mwl_op:.0f} W/m² (source: {mwl_source})" if mwl_op is not None else "Provide baseline WBGT to enable HSP."
-
-# -----------------------------
-# KPI CARDS FIRST (phone: readings appear before sticky bar)
-# -----------------------------
-st.markdown(
-f"""
-<div class="kpi-grid">
-
-  <div class="kpi-card" style="border-left:7px solid {band_color};">
-    <div class="kpi-label">Adjusted WBGT (Guideline)</div>
-    <div class="kpi-value">{wbgt_disp}</div>
-    <div class="kpi-sub">{icon} <b>{wbgt_policy_band}</b> {pill}</div>
-    <div class="kpi-foot">{wbgt_policy_msg}<br>Exposure adjustments: <b>{pen_disp}</b></div>
-  </div>
-
-  <div class="kpi-card" style="border-left:7px solid {h_color};">
-    <div class="kpi-label">Heat-Strain Profile (HSP)</div>
-    <div class="kpi-value">{hsp_value_disp}</div>
-    <div class="kpi-sub"><b>{hsp_sub}</b></div>
-    <div class="kpi-foot">{hsp_foot}</div>
-  </div>
-
-  <div class="kpi-card" style="border-left:7px solid {wb_phys_color};">
-    <div class="kpi-label">Wet-Bulb (Evaporation Capacity)</div>
-    <div class="kpi-value">{wb_disp}</div>
-    <div class="kpi-sub"><b>{wb_phys_icon} {wb_phys_msg}</b></div>
-    <div class="kpi-foot">
-      🟢 Cooling Effective (WB &lt; {wb1})<br>
-      🟡 Cooling Starting to Limit ({wb1}–{wb2})<br>
-      🟠 Cooling Limited ({wb2}–{wb3})<br>
-      🔴 Cooling Compromised (≥ {wb3})
-    </div>
-  </div>
-
-</div>
-""",
-unsafe_allow_html=True
-)
+hsp_foot = f"Operational Cooling Capacity (MWL proxy): {mwl_op:.0f} W/m²" if mwl_op is not None else "Provide baseline WBGT to enable HSP."
+mwl_loss = (float(mwl_env) - float(mwl_op)) if (mwl_env is not None and mwl_op is not None) else None
 
 # -----------------------------
 # Sticky Supervisor Action Bar (COMPACT; NO emergency line)
@@ -1624,21 +1674,8 @@ st.markdown(
 )
 
 # -----------------------------
-# Consolidated risk summary (mobile-safe, theme-neutral)
+# Shared display labels (used by actions + summary + snapshot)
 # -----------------------------
-st.markdown("### 🧾 Risk Summary (Context-Relevant Significance)")
-
-def _risk_box(level: str, body_md: str):
-    """Theme-aware summary box that stays readable in dark/light mode (desktop + mobile)."""
-    if level == "LOW":
-        st.success(body_md)
-    elif level == "CAUTION":
-        st.warning(body_md)
-    else:
-        # HIGH STRAIN / WITHDRAWAL
-        st.error(body_md)
-
-# Map label → box severity + display title
 label = final_risk  # keep backward compatibility
 _label = (label or "").strip().upper()
 
@@ -1656,16 +1693,36 @@ hsp_value_disp = locals().get("hsp_value_disp", None) or locals().get("hsp_disp"
 # Default summary line (kept constant & field-friendly)
 summary_line = locals().get("summary_line", None) or "Use WBGT for policy alignment. Use HSP as a cooling-capacity cross-check when it is more protective."
 
-_title = f"**{label}**"
-_metrics = f"- **Adjusted WBGT:** {wbgt_disp}\n- **HSP:** {hsp_value_disp}"
-_note = f"- {summary_line}" if summary_line else ""
+# -----------------------------
+# Control-panel decision banner
+# -----------------------------
+decision_title = ""
+decision_message = ""
+if _label.startswith("LOW"):
+    decision_title = "🟢 SAFE FOR ROUTINE WORK"
+    decision_message = "Maintain hydration and routine supervision."
+elif _label.startswith("CAUTION"):
+    decision_title = "🟠 INCREASE SUPERVISION"
+    decision_message = "Enforce hydration and planned work-rest cycles."
+elif _label.startswith("HIGH"):
+    decision_title = "🔴 REDUCE HEAT EXPOSURE"
+    decision_message = "Short work periods, cooling breaks, and close worker monitoring required."
+else:
+    decision_title = "⛔ ESSENTIAL WORK ONLY"
+    decision_message = "Avoid routine work. Apply strict heat controls and continuous monitoring."
 
-_risk_box(_level, f"{_title}\n\n{_metrics}\n{_note}")
+st.markdown("### 🎛 Supervisor Decision Banner")
+if _label.startswith("LOW"):
+    st.success(f"**{decision_title}**\n\n{decision_message}\n\nAdjusted WBGT: {wbgt_disp} | HSP: {hsp_value_disp}")
+elif _label.startswith("CAUTION"):
+    st.warning(f"**{decision_title}**\n\n{decision_message}\n\nAdjusted WBGT: {wbgt_disp} | HSP: {hsp_value_disp}")
+else:
+    st.error(f"**{decision_title}**\n\n{decision_message}\n\nAdjusted WBGT: {wbgt_disp} | HSP: {hsp_value_disp}")
 
 # -----------------------------
-# Supervisor actions (theme-aware; avoids white-card text washout on mobile dark mode)
+# Supervisor actions FIRST (field-friendly ordering)
 # -----------------------------
-st.markdown("### 👷 Supervisor Actions (Cooling Capacity & Process-Relevant)")
+st.markdown("### 👷 Supervisor Actions")
 
 # Helper for bullets
 def _bullets(lines):
@@ -1728,27 +1785,29 @@ elif _label.startswith("HIGH"):
     ]
     monitoring_lines = [
         "Close monitoring; frequent symptom checks",
-        "Stop work if symptoms develop",
+        "Stop work and notify medical/HSE support if symptoms develop",
         "Have emergency plan ready (heat illness response)",
     ]
 else:  # WITHDRAWAL
     hydration_lines = [
-        "Hydration only in cool area; monitor intake",
-        "Electrolytes if sweating continues",
-        "Medical evaluation if symptomatic",
+        "Hydrate only in a cool recovery area; monitor intake closely",
+        "Electrolytes if sweating continues or repeated short exposure periods cannot be avoided",
+        "Medical evaluation if symptoms develop, recovery is delayed, or complaints continue",
     ]
     workrest_lines = [
-        "Stop routine work; only essential tasks with strict limits",
-        "Use shortest exposure times possible; rotate staff",
-        "Mandatory recovery in cool zone between bouts",
+        "Restrict activity to absolutely essential work only",
+        "Avoid routine, non-urgent, or deferrable tasks",
+        "Keep any unavoidable exposure periods as short as possible; in very severe conditions, limiting work periods to about 20 minutes at a time may be a prudent operational limit unless cooling conditions improve",
+        "Mandatory recovery in a cool zone between exposure periods with strong self-pacing",
     ]
     cooling_lines = [
-        "Immediate cooling measures available (A/C, fans, ice towels)",
-        "Consider ice slurry / cold-water immersion capability where feasible",
+        "Provide immediate workplace cooling (A/C, fans, shade, cooled rest point, ice towels where available)",
+        "Use pre-cooling or active cooling before re-entry when repeated exposures cannot be avoided",
     ]
     monitoring_lines = [
-        "Continuous supervision; consider on-site medical support",
-        "Immediate response if confusion, collapse, or severe symptoms",
+        "Buddy system and close supervisor observation are required",
+        "Allow additional recovery time with hydration and cooling support. If symptoms develop or recovery is delayed, notify the medical team or follow site emergency procedures",
+        "Escalate promptly for confusion, collapse, severe cramps, vomiting, or other severe symptoms",
     ]
 
 # Use expanders for compactness on mobile; auto-expand at higher risk
@@ -1760,10 +1819,153 @@ with c1:
     with st.expander("Cooling", expanded=_expand):
         st.markdown(_bullets(cooling_lines))
 with c2:
-    with st.expander("Work–Rest", expanded=_expand):
+    with st.expander("Work-Rest", expanded=_expand):
         st.markdown(_bullets(workrest_lines))
-    with st.expander("Monitoring", expanded=_expand):
+    with st.expander("Worker Monitoring", expanded=_expand):
         st.markdown(_bullets(monitoring_lines))
+
+# -----------------------------
+# Supervisor quick card (exportable summary)
+# -----------------------------
+st.markdown("### 📋 Supervisor Quick Card")
+
+supervisor_guidance_lines = []
+for section, lines in [
+    ("Hydration", hydration_lines),
+    ("Work-Rest", workrest_lines),
+    ("Cooling", cooling_lines),
+    ("Worker Monitoring", monitoring_lines),
+]:
+    supervisor_guidance_lines.append(f"{section}:")
+    supervisor_guidance_lines.extend([f"  - {x}" for x in lines if str(x).strip()])
+
+wet_bulb_quick = fmt_temp(ss.get("wb_c"), ss.get("units","metric")) if ss.get("wb_c") is not None else "—"
+
+status_label_map = {
+    "LOW": "LOW RISK",
+    "CAUTION": "CAUTION",
+    "HIGH STRAIN": "HIGH STRAIN",
+    "WITHDRAWAL": "WITHDRAWAL ZONE",
+}
+
+decision_label_map = {
+    "LOW": "SAFE FOR ROUTINE WORK",
+    "CAUTION": "INCREASE SUPERVISION",
+    "HIGH STRAIN": "REDUCE HEAT EXPOSURE",
+    "WITHDRAWAL": "ESSENTIAL WORK ONLY",
+}
+
+status_label = status_label_map.get(final_risk, final_risk)
+decision_label = decision_label_map.get(final_risk, decision_title.replace("🟢 ","").replace("🟠 ","").replace("🔴 ","").replace("⛔ ",""))
+
+status_icon_map = {
+    "LOW": "🟢",
+    "CAUTION": "🟠",
+    "HIGH STRAIN": "🔴",
+    "WITHDRAWAL": "⛔",
+}
+status_icon = status_icon_map.get(final_risk, "•")
+
+quick_card = (
+    f"HART — Heat Assessment & Response Tool\n"
+    f"Mode: {'Field Supervisor Mode' if ss.get('app_mode') == 'field' else 'Professional Analysis Mode'}\n"
+    f"Build: {APP_VERSION}\n"
+    f"{'-'*42}\n"
+    f"{status_icon} Current Status: {status_label}\n"
+    f"Decision: {decision_label}\n"
+    f"Adjusted WBGT: {wbgt_disp}\n"
+    f"HSP: {hsp_value_disp}\n"
+    f"Wet Bulb: {wet_bulb_quick}\n"
+    f"Assessment Time: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+    f"{'-'*42}\n"
+    f"Supervisor Guidance\n" + "\n".join(supervisor_guidance_lines)
+)
+
+quick_card_html_lines = [
+    f"<div style='font-weight:800;font-size:1.15rem;margin-bottom:0.25rem;'>HART — Heat Assessment &amp; Response Tool</div>",
+    f"<div><b>Mode:</b> {'Field Supervisor Mode' if ss.get('app_mode') == 'field' else 'Professional Analysis Mode'} &nbsp;&nbsp; <b>Build:</b> {APP_VERSION}</div>",
+    "<hr style='margin:0.45rem 0;'>",
+    f"<div style='font-size:1.05rem;font-weight:800;'>{status_icon} <b>Current Status:</b> {status_label}</div>",
+    f"<div style='font-size:1.05rem;font-weight:800;'><b>Decision:</b> {decision_label}</div>",
+    f"<div><b>Adjusted WBGT:</b> {wbgt_disp} &nbsp;|&nbsp; <b>HSP:</b> {hsp_value_disp} &nbsp;|&nbsp; <b>Wet Bulb:</b> {wet_bulb_quick}</div>",
+    f"<div><b>Assessment Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</div>",
+    "<div style='margin-top:0.8rem;font-weight:700;'>Supervisor Guidance</div>",
+]
+for section, lines in [("Hydration", hydration_lines), ("Work-Rest", workrest_lines), ("Cooling", cooling_lines), ("Worker Monitoring", monitoring_lines)]:
+    quick_card_html_lines.append(f"<div style='margin-top:0.35rem;'><b>{section}:</b></div>")
+    quick_card_html_lines.append("<ul style='margin-top:0.15rem;'>" + "".join([f"<li>{x}</li>" for x in lines if str(x).strip()]) + "</ul>")
+
+st.markdown(
+    "<div style='background:#dfeaf6;border-radius:10px;padding:14px 18px;color:#0a4f9b;'>" + "".join(quick_card_html_lines) + "</div>",
+    unsafe_allow_html=True,
+)
+st.download_button(
+    label="⬇ Download Quick Card",
+    data=quick_card,
+    file_name="HART_supervisor_quick_card.txt",
+    mime="text/plain",
+    use_container_width=True,
+)
+
+# -----------------------------
+# Consolidated risk summary (mobile-safe, theme-neutral)
+# -----------------------------
+st.markdown("### 🧾 Risk Summary (Context-Relevant Significance)")
+
+def _risk_box(level: str, body_md: str):
+    """Theme-aware summary box that stays readable in dark/light mode (desktop + mobile)."""
+    if level == "LOW":
+        st.success(body_md)
+    elif level == "CAUTION":
+        st.warning(body_md)
+    else:
+        # HIGH STRAIN / WITHDRAWAL
+        st.error(body_md)
+
+_title = f"**{label}**"
+_metrics = f"- **Adjusted WBGT:** {wbgt_disp}\n- **HSP:** {hsp_value_disp}"
+_note = f"- {summary_line}" if summary_line else ""
+
+_risk_box(_level, f"{_title}\n\n{_metrics}\n{_note}")
+
+# -----------------------------
+# Risk snapshot numbers AFTER actions + summary
+# -----------------------------
+st.markdown("### 🔢 Heat-Stress Snapshot Numbers")
+st.markdown(
+f"""
+<div class="kpi-grid">
+
+  <div class="kpi-card" style="border-left:7px solid {band_color};">
+    <div class="kpi-label">Adjusted WBGT (Guideline)</div>
+    <div class="kpi-value">{wbgt_disp}</div>
+    <div class="kpi-sub">{icon} <b>{wbgt_policy_band}</b> {pill}</div>
+    <div class="kpi-foot">{wbgt_policy_msg}<br>Worksite additional factors applied: <b>{pen_disp}</b></div>
+  </div>
+
+  <div class="kpi-card" style="border-left:7px solid {h_color};">
+    <div class="kpi-label">Heat-Strain Profile (HSP)</div>
+    <div class="kpi-value">{hsp_value_disp}</div>
+    <div class="kpi-sub"><b>{hsp_sub}</b></div>
+    <div class="kpi-foot">{hsp_foot}</div>
+  </div>
+
+  <div class="kpi-card" style="border-left:7px solid {wb_phys_color};">
+    <div class="kpi-label">Wet-Bulb (Evaporation Capacity)</div>
+    <div class="kpi-value">{wb_disp}</div>
+    <div class="kpi-sub"><b>{wb_phys_icon} {wb_phys_msg}</b></div>
+    <div class="kpi-foot">
+      🟢 Cooling Effective (WB &lt; {wb1})<br>
+      🟡 Cooling Starting to Limit ({wb1}–{wb2})<br>
+      🟠 Cooling Limited ({wb2}–{wb3})<br>
+      🔴 Cooling Compromised (≥ {wb3})
+    </div>
+  </div>
+
+</div>
+""",
+unsafe_allow_html=True
+)
 
 with st.expander("ℹ️ HSP Details (Tap To Expand)", expanded=False):
     st.markdown("**HSP Field Guide**")
@@ -2079,10 +2281,13 @@ with st.expander("ℹ About HART • Disclaimer • Feedback", expanded=False):
 Field Heat-Stress Decision Support System integrating **WBGT • MWL • HSP**  
 *(Instrument TWL input supported where available)*
 
-**Decision-Support Only:**  
+**Purpose:**  
+HART is designed as a **field decision-support tool** to assist supervisors and occupational health professionals in assessing workplace heat risk.
+
+**Disclaimer:**  
 This tool supports occupational heat-stress awareness and field screening.  
-It does **not** replace site HSE policy, IH/OH judgement, medical evaluation, or regulatory compliance.  
-No organization or professional society endorses this tool unless explicitly stated.
+It does **not** replace site HSE policy, IH/OH judgement, medical evaluation, or regulatory requirements.  
+No professional organization or institution endorses this tool unless explicitly stated.
 
 **Feedback & Field Validation:**  
 https://forms.gle/7rfrXZXkyCdXqGVs5  
