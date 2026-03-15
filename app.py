@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.31"
+APP_VERSION = "v1.9.32"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -507,8 +507,8 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
           ☀️ H.A.R.T — Human Adaptive Response Threshold (Field Dashboard)
         </h2>
         <p style="margin-top:0.15rem; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
-          <span style="font-weight:800;">WBGT</span> = Suggested Permissible Exposure(PEL) Limit - Regulatory Guide For Environmental Heat Hazard.<br>
-          <span style="font-weight:800;">Heat Strain Profile (HSP)</span> = Human Cooling Ability vs Heat Load Using Cooling Capacity (W/m²).
+          <span style="font-weight:800;">Wet Bulb Globe Temperature (WBGT)</span> = Screening heat-stress index used to guide permissible exposure limits in occupational standards.<br>
+          <span style="font-weight:800;">Heat-Strain Profile (HSP)</span> = Human cooling ability versus heat load using cooling capacity (W/m²).
         </p>
         <p style="margin-bottom:0; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
           <span style="font-weight:800;">Workflow:</span> Inputs → Baseline WBGT → Worksite Additional Factors → Adjusted WBGT → HSP → Guidance → Logging
@@ -519,10 +519,18 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
     st.markdown("### What This Tool Does")
     st.markdown("""
 - Computes **Baseline WBGT** and **Adjusted WBGT** (after clothing/PPE, vehicle/enclosure, radiant/hot-surface, and site-specific additional factors)
-- Uses **Instrument TWL (W/m²)Readings** *if available* (sites with TWL instruments can enter the reading)
+- Uses **Instrument TWL (W/m²) readings** *if available* (sites with TWL instruments can enter the reading)
 - Estimates **MWL (W/m²)** when an instrument TWL reading is not available
 - Computes **HSP** (Heat-Strain Profile) to express **Human Cooling Margin** under current conditions
 - Provides **Supervisor Guidance** and maintains an **Audit Log**
+""")
+
+    st.info("""
+**Scientific Basis (High-Level)**  
+**Wet Bulb Globe Temperature (WBGT)** supports screening and policy-level heat-hazard decisions.  
+**Thermal Work Limit (TWL)** provides instrument-based environmental cooling capacity where available.  
+**Maximum Work Limit (MWL)** is used here as a modeled cooling-capacity proxy when TWL is not measured.  
+**Heat-Strain Profile (HSP)** compares heat load against cooling capacity to show how much physiological margin remains.
 """)
 
     # Collapsible definitions / explanations (compact welcome screen)
@@ -531,18 +539,18 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
 **Core Terms**
 - **Heat Stress**: External Thermal Load from the environment and work conditions
 - **Heat Strain**: The Body’s Physiological Response while trying to maintain thermal balance
-- **Wet-Bulb (WB)**: Reflects Evaporative Potential and how effectively sweat can evaporate (a key physiological limiter)
-- **WBGT**: Screening / Regulatory Heat-Hazard Index - PEL used for compliance and baseline decisions
-- **TWL (Thermal Work Limit)**: Instrument-Measured cooling capacity of the environment (W/m²)
-- **MWL (W/m²)**: Modeled Cooling Capacity when TWL instrumentation is not available  
+- **Wet-Bulb Temperature (WB)**: Reflects evaporative cooling potential and sweat evaporation efficiency (a key physiological limiter)
+- **Wet Bulb Globe Temperature (WBGT)**: Screening heat-stress index used to guide permissible exposure limits and baseline decisions in occupational practice
+- **Thermal Work Limit (TWL)**: Instrument-measured cooling capacity of the environment (W/m²)
+- **Maximum Work Limit (MWL, W/m²)**: Modeled cooling capacity when TWL instrumentation is not available  
   – Higher MWL → Longer Sustainable Work Duration  
   – Lower MWL → Shorter Sustainable Work Duration
-- **HSP (Heat-Strain Profile)**: Heat Demand Relative To Human Cooling Capacity  
+- **Heat-Strain Profile (HSP)**: Heat demand relative to human cooling capacity  
   – Lower HSP = Safer  
   – Higher HSP = Reduced Ability To Dissipate Heat
 - **Acclimatization**: Improves Sweat Efficiency, Cardiovascular Stability, And Overall Heat Tolerance
 
-- **H.A.R.T (Human Adaptive Response Threshold)**: a memorable short name for this prototype dashboard.
+- **Heat Assessment & Response Tool (HART)**: a memorable short name for this prototype dashboard.
 
 **HSP interpretation (Practical)**
 - 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  
