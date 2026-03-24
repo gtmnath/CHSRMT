@@ -24,16 +24,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ============================================================
-# HART TITLE HEADER
-# ============================================================
-
-st.markdown("""
-<h2 style='margin-bottom:0px;'>HART — Heat Assessment & Response Tool</h2>
-<div style='font-size:15px;color:#2f3e4e;font-weight:700;'>Field Heat-Stress Decision Support System</div>
-""", unsafe_allow_html=True)
-
-st.markdown("---")
 
 # ----------------------------
 # Global CSS (compact + mobile-fit improvements)
@@ -245,6 +235,54 @@ div[data-testid="stHorizontalBlock"] {
 .kpi-card, .kpi-card * { color: #0b2239 !important; }
 /* keep colored emphasis when explicitly set inline */
 
+/* ---------- Global readability + breathing space ---------- */
+body, .stMarkdown, .stText { color: #1a202c !important; }
+.block-container {
+    padding-top: 1.55rem !important;
+    padding-bottom: 4.50rem !important;
+}
+h2, h3 {
+    margin-top: 1.05rem !important;
+    margin-bottom: 0.45rem !important;
+}
+div[data-testid="stExpander"] {
+    margin-top: 0.45rem;
+    margin-bottom: 0.45rem;
+}
+div.stButton > button {
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+}
+
+/* landing-page mode button emphasis */
+.mode-title { color:#17324d !important; font-weight:800 !important; margin-bottom:0.10rem !important; }
+.mode-caption { color:#34495e !important; font-weight:600 !important; margin-top:0 !important; }
+
+/* make the Professional Analysis button clearly intentional on the landing page */
+div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div.stButton > button,
+div[data-testid="stHorizontalBlock"] > div:nth-child(2) div.stButton > button {
+    background-color: #2b6cb0 !important;
+    color: #ffffff !important;
+    border: 1px solid #2b6cb0 !important;
+}
+div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div.stButton > button p,
+div[data-testid="stHorizontalBlock"] > div:nth-child(2) div.stButton > button p {
+    color: #ffffff !important;
+}
+
+/* Prevent clipped top content */
+header[data-testid="stHeader"] { background: transparent !important; }
+
+/* Hide floating bottom-right overlays that can block content */
+div[data-testid="stDecoration"],
+button[title="Deploy"],
+button[kind="header"],
+[data-testid="stStatusWidget"],
+[data-testid="stChatFloatingInputContainer"],
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -259,7 +297,8 @@ def ss_default(key, val):
         ss[key] = val
 
 def go_to_mode_select():
-    """Return to the launch page reliably without wiping the app state."""
+    """Return to the mode-selection page reliably without wiping the app state."""
+    ss["force_mode_select"] = True
     ss["app_mode"] = None
     ss["landing_open"] = False
     ss["confirm_reset"] = False
@@ -438,18 +477,23 @@ ss_default("audit_log", [])
 # ----------------------------
 ss_default("app_mode", None)        # "field" or "professional"
 ss_default("landing_open", False)   # professional-mode welcome gate latch
+ss_default("force_mode_select", False)
+ss_default("force_reopen_welcome", False)
 
 # Safety latch: if the user has already computed (baseline frozen or effective WBGT present),
 # do NOT drop back to the Welcome Gate on a normal Streamlit rerun.
 try:
-    if (ss.get("wbgt_base_frozen") is not None) or (ss.get("wbgt_eff_c") is not None):
-        if ss.get("app_mode") is None:
-            ss["app_mode"] = "field"
-        ss["landing_open"] = True
+    if not ss.get("force_mode_select", False) and not ss.get("force_reopen_welcome", False):
+        if (ss.get("wbgt_base_frozen") is not None) or (ss.get("wbgt_eff_c") is not None):
+            if ss.get("app_mode") is None:
+                ss["app_mode"] = "field"
+            ss["landing_open"] = True
 except Exception:
     pass
 
 if ss.get("app_mode") is None:
+    ss["force_mode_select"] = False
+    ss["force_reopen_welcome"] = False
     st.markdown("""
     <h2 style='margin-bottom:0.2rem;'>HART — Heat Assessment & Response Tool</h2>
     <p class='ui-strong' style='margin-top:0; color:#2f3e4e; font-weight:800;'>
@@ -465,35 +509,53 @@ if ss.get("app_mode") is None:
           ☀️ Select User Mode
         </h2>
         <p style="margin-top:0.10rem; margin-bottom:0; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
-          <span style="font-weight:800;">Field Supervisor Mode</span> opens directly to inputs, compute, and supervisor guidance.<br>
-          <span style="font-weight:800;">Professional Analysis Mode</span> opens the full HART workflow with welcome page, references, and deeper interpretation.
+          <span style="font-weight:800;">Field Supervisor Mode</span> = Quick entry • Instant decision • Supervisor actions.<br>
+          <span style="font-weight:800;">Professional Analysis Mode</span> = Full workflow • Interpretation • Validation context.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown('<div style="height:0.25rem;"></div>', unsafe_allow_html=True)
+
     m1, m2 = st.columns(2)
+
     with m1:
         st.markdown("**👷 Field Supervisor Mode**")
-        st.caption("Fast entry to units, inputs, compute, and supervisor actions.")
+        st.markdown(
+            "<div style='color:#5c5c5c; font-weight:600; font-size:0.96rem; margin-top:-0.2rem;'>"
+            "Quick entry • Instant decision • Supervisor actions."
+            "</div>",
+            unsafe_allow_html=True
+        )
+        st.markdown("<div style='height:0.5rem;'></div>", unsafe_allow_html=True)
         if st.button("Open Field Supervisor Mode", type="primary", use_container_width=True):
             ss["app_mode"] = "field"
             ss["landing_open"] = True
             st.rerun()
+        st.markdown("<div style='height:0.3rem;'></div>", unsafe_allow_html=True)
+
     with m2:
         st.markdown("**🧪 Professional Analysis Mode**")
-        st.caption("Opens the welcome page, definitions, references, and the full professional workflow.")
-        if st.button("Open Professional Analysis Mode", use_container_width=True):
+        st.markdown(
+            "<div style='color:#5c5c5c; font-weight:600; font-size:0.96rem; margin-top:-0.2rem;'>"
+            "Full workflow • Interpretation • Validation context."
+            "</div>",
+            unsafe_allow_html=True
+        )
+        st.markdown("<div style='height:0.5rem;'></div>", unsafe_allow_html=True)
+        if st.button("🔬 Open Professional Analysis Mode", use_container_width=True):
             ss["app_mode"] = "professional"
             ss["landing_open"] = False
             st.rerun()
+        st.markdown("<div style='height:0.3rem;'></div>", unsafe_allow_html=True)
 
     st.stop()
 
 
 if ss.get("app_mode") == "professional" and not ss["landing_open"]:
+    ss["force_reopen_welcome"] = False
     st.markdown("""
-    <h2 style='margin-bottom:0.2rem;'>H.A.R.T — Heat Assessment & Response Tool</h2>
+    <h2 style='margin-bottom:0.2rem;'>HART — Heat Assessment & Response Tool</h2>
     <p class='ui-strong' style='margin-top:0; opacity:0.95;'>
     Field-Ready Decision Support For Occupational Heat Stress And Heat Strain
     </p>
@@ -504,7 +566,7 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
     st.markdown("""
     <div class="welcome-box" style="color: rgba(255,255,255,0.96) !important;">
         <h2 style="margin-bottom:0.25rem; color: rgba(255,255,255,0.98) !important;">
-          ☀️ H.A.R.T — Human Adaptive Response Threshold (Field Dashboard)
+          ☀️ HART — Heat Assessment & Response Tool
         </h2>
         <p style="margin-top:0.15rem; color: rgba(255,255,255,0.92) !important; line-height:1.35;">
           <span style="font-weight:800;">Wet Bulb Globe Temperature (WBGT)</span> = Screening heat-stress index used to guide permissible exposure limits in occupational standards.<br>
@@ -617,15 +679,10 @@ else:
 
 st.markdown(f"""
     <h2 style='margin-bottom:0.2rem;'>{page_title}</h2>
-<p class='ui-subtle' style='margin-top:0; margin-bottom:0.25rem; color:#2f3e4e; font-weight:700;'>
-{page_subtitle}
-</p>
+    <p class='ui-subtle' style='margin-top:0; margin-bottom:0.20rem; color:#2f3e4e; font-weight:700;'>
+    {page_subtitle}
+    </p>
 """, unsafe_allow_html=True)
-
-st.markdown(
-    f"<span class='ui-subtle'>{workflow_line}</span>",
-    unsafe_allow_html=True
-)
 
 mode_c1, mode_c2 = st.columns([1,1])
 with mode_c1:
@@ -634,10 +691,23 @@ with mode_c1:
 with mode_c2:
     if ss.get("app_mode") == "professional":
         if st.button("ℹ️ Reopen Welcome Page", use_container_width=True, key="reopen_welcome_page_top"):
+            ss["force_reopen_welcome"] = True
             ss["landing_open"] = False
             st.rerun()
     else:
-        st.markdown("<span style='color:#3f4f60;font-weight:600;'>Field Supervisor Mode keeps the same calculations and shows the faster workflow.</span>", unsafe_allow_html=True)
+        st.markdown(
+            "<div style='color:#3f4f60;font-weight:600; padding:0.55rem 0 0 0;'>"
+            "Field Supervisor Mode keeps the same calculations and shows the faster workflow."
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+st.markdown(
+    f"<div style='margin-top:0.35rem; margin-bottom:0.45rem; color:#2f3e4e; font-weight:650; line-height:1.45; word-break:break-word;'>"
+    f"{workflow_line}"
+    f"</div>",
+    unsafe_allow_html=True
+)
 
 # ----------------------------
 # Quick Reference (WBGT bands + HSP) — mobile friendly (no sidebar needed)
@@ -874,14 +944,23 @@ with st.expander("📍 Location Search (City Lookup)", expanded=False):
 # BLOCK 4 — RETRIEVE WEATHER & POPULATE ENVIRONMENTAL INPUTS (MOBILE SAFE)
 # ======================================================================
 
+st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("## 🌡 Environmental Inputs")
 
 # -----------------------------------------
 # Retrieve live weather
 # -----------------------------------------
-fetch_btn = False
-if ss.get("app_mode") != "field":
-    fetch_btn = st.button("🌤 Retrieve Local Weather")
+
+
+fetch_btn = st.button(
+    "🌤 Retrieve Local Weather",
+    use_container_width=True,
+    key="fetch_local_weather_btn"
+)
+
+# fetch_btn = False
+# if ss.get("app_mode") != "field":
+  #  fetch_btn = st.button("🌤 Retrieve Local Weather")
 
 if fetch_btn:
     lat = ss.get("lat", None)
@@ -1239,7 +1318,7 @@ if st.button("Apply Worksite Additional Factors & Compute"):
         # Display success message
         # ------------------------------------------------------------
         st.success(
-            f"Worksite Additional Factors Applied ({penalty_str}) → "
+            f"Exposure Adjustments Applied ({penalty_str}) → "
             f"Adjusted WBGT = {wbgt_display}. "
             "Scroll down for Heat-Stress Classification."
         )
@@ -1455,9 +1534,12 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
   margin-bottom: 0.25rem;
   line-height: 1.25;
 }
+
+/* keep Block 7 focused on cards and snapshot layout; landing-page button styling lives in the global CSS block */
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("## 🧭 Heat-Stress Snapshot (WBGT Guideline + HSP + Wet-Bulb)")
 
 # -----------------------------
@@ -1543,7 +1625,7 @@ wb_phys_icon = "⚪"
 
 if wb_info_c is not None:
     if wb_info_c < wb_safe_c:
-        wb_phys_icon, wb_phys_msg, wb_phys_color = "🟢", "Cooling Effective", "#2ecc71"
+        wb_phys_icon, wb_phys_msg, wb_phys_color = "🟢", "Cooling Effective (Evaporation Adequate)", "#2ecc71"
     elif wb_info_c < wb_strain_c:
         wb_phys_icon, wb_phys_msg, wb_phys_color = "🟡", "Cooling Starting to Limit", "#f1c40f"
     elif wb_info_c < wb_danger_c:
@@ -1613,11 +1695,11 @@ if wbgt_env is not None:
     ss["hsp"] = hsp
 
     if hsp < 0.8:
-        h_icon, h_band, h_color = "🟢", "Cooling Exceeds Heat Load", "#2ecc71"
+        h_icon, h_band, h_color = "🟢", "Cooling Exceeds Heat Load (Physiological Margin Available)", "#2ecc71"
     elif hsp < 1.0:
-        h_icon, h_band, h_color = "🟠", "Heat Balance Marginal", "#f39c12"
+        h_icon, h_band, h_color = "🟠", "Borderline — Monitor Closely", "#f39c12"
     else:
-        h_icon, h_band, h_color = "🔴", "Heat Gain Likely Exceeds Cooling Capacity", "#e74c3c"
+        h_icon, h_band, h_color = "🔴", "Cooling Inadequate — Heat Strain Likely", "#e74c3c"
 
 # -----------------------------
 # Override logic (conservative): policy first; HSP only if more protective
@@ -1835,7 +1917,7 @@ with c2:
 # -----------------------------
 # Supervisor quick card (exportable summary)
 # -----------------------------
-st.markdown("### 📋 Supervisor Quick Card")
+st.markdown("### 📋 Supervisor Snapshot — Field Use")
 
 supervisor_guidance_lines = []
 for section, lines in [
