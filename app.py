@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.32"
+APP_VERSION = "v1.9.33"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -325,7 +325,7 @@ HSP_AMBER = 4.0   # Caution
 # else -> Withdrawal
 
 # ----------------------------
-# MWL (Metabolic Work Load) model parameters
+# MWL (Maximum Work Limit – modeled cooling-capacity proxy) model parameters
 # These are "calibration knobs" that we will tune using your field scenarios.
 # ----------------------------
 ss_default("MWL_A0", 450.0)     # base W/m²
@@ -604,7 +604,7 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
 - **Wet-Bulb Temperature (WB)**: Reflects evaporative cooling potential and sweat evaporation efficiency (a key physiological limiter)
 - **Wet Bulb Globe Temperature (WBGT)**: Screening heat-stress index used to guide permissible exposure limits and baseline decisions in occupational practice
 - **Thermal Work Limit (TWL)**: Instrument-measured cooling capacity of the environment (W/m²)
-- **Maximum Work Limit (MWL, W/m²)**: Modeled cooling capacity when TWL instrumentation is not available  
+- **Maximum Work Limit (MWL, W/m²)**: Modeled cooling capacity proxy when TWL instrumentation is not available  
   – Higher MWL → Longer Sustainable Work Duration  
   – Lower MWL → Shorter Sustainable Work Duration
 - **Heat-Strain Profile (HSP)**: Heat demand relative to human cooling capacity  
@@ -612,7 +612,7 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
   – Higher HSP = Reduced Ability To Dissipate Heat
 - **Acclimatization**: Improves Sweat Efficiency, Cardiovascular Stability, And Overall Heat Tolerance
 
-- **Heat Assessment & Response Tool (HART)**: a memorable short name for this prototype dashboard.
+- **Heat Assessment & Response Tool (HART)**: a memorable short name for this field-deployable pilot system dashboard.
 
 **HSP interpretation (Practical)**
 - 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  
@@ -624,11 +624,11 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
     with st.expander("📚 Sources & Standards (Summary)", expanded=False):
         st.markdown("""
 **Sources of Screening Thresholds and Adjustment Concepts (High-Level):**
-- **WBGT**: widely used heat-stress screening index(as PEL or OEL) in occupational hygiene (commonly referenced in **ACGIH TLV®/Action Limit**, **NIOSH/OSHA guidance**, and **ISO heat-stress frameworks**).
+- **WBGT**: widely used heat-stress screening index (as PEL or OEL) in occupational hygiene (commonly referenced in **ACGIH TLV®/Action Limit**, **NIOSH/OSHA guidance**, and **ISO heat-stress frameworks**).
 - **Worksite Additional Factors**: Practical correction concepts aligned with published guidance on **clothing/PPE impacts, air movement, radiant heat, and enclosure effects**.
 - **HSP (Heat-Strain Profile)**: a *Physiology-Facing* indicator that compares estimated **cooling capacity (MWL proxy)** vs **heat load**, to help supervisors interpret “how tight the cooling margin is” beyond a single index.
 
-**Note:** This app is a decision-support prototype. Site policy, IH/OH judgement, and medical protocols always override.
+**Note:** This app is a decision-support field-deployable pilot system. Site policy, IH/OH judgement, and medical protocols always override.
 """)
 
     # When To Use The Tool (addresses  “shift start vs mid-shift” question)
@@ -641,9 +641,13 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
 - **After an event / near‑miss:** document conditions in the **audit log** for learning and prevention.
 
 **If Baseline WBGT is already in “withdrawal” at shift start**
-- Treat it as a **stop‑and‑think trigger**, not an automatic “no work ever” signal.
-- Consider **rescheduling, engineering controls (shade/ventilation), shorter bouts with recovery, additional supervision, medical screening,** and **task re‑planning** before starting.
+- Treat it as a **stop‑and‑think trigger**, not an automatic “work cessation” signal.
+- Consider **rescheduling, engineering controls (shade/ventilation), site-approved work–rest controls, additional supervision, medical screening,** and **task re‑planning** before starting.
 - Then run **Adjusted WBGT** separately for the *highest‑risk tasks* (e.g., heavy PPE, confined/enclosed, high radiant zones).
+
+**Centralized Deployment (Optional)**
+- For large operations, baseline environmental measurements and standard task scenarios may be reviewed centrally.
+- HART outputs can then be communicated to field supervisors to guide safe work execution in line with site policy.
 
 **Crew differences**
 - Do **separate assessments** when PPE or task intensity differs (at least: **(1) light PPE/low radiant** vs **(2) heavy PPE/high radiant** groups).
@@ -1328,7 +1332,7 @@ if st.button("Apply Worksite Additional Factors & Compute"):
 # BLOCK 6 — NIOSH / OSHA WBGT & Wet-Bulb Thresholds (with Acclimatization)
 # ======================================================================
 
-with st.expander("🎯 Heat-Stress Thresholds / Reference (Tap To Expand)", expanded=False):
+with st.expander("🎯 Heat-Stress Thresholds & Acclimatization (Tap To Expand)", expanded=False):
 
     # Worker acclimatization toggle
     accl_status = st.radio(
@@ -1549,10 +1553,10 @@ def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
     if wbgt_eff_c < A:
         return ("🟢", "LOW RISK", "Routine work acceptable. Maintain hydration and routine supervision.", 0, "#2ecc71")
     if wbgt_eff_c < B:
-        return ("🟠", "CAUTION", "Increase supervision. Enforce hydration and basic work–rest cycles.", 1, "#f39c12")
+        return ("🟠", "CAUTION", "Increase supervision. Maintain hydration and follow site-approved work–rest practices.", 1, "#f39c12")
     if wbgt_eff_c < C:
-        return ("🔴", "HIGH STRAIN", "Reduce exposure; Move to cooler/shaded areas; Use ventilation/A/C; Enforce short work–rest cycles.", 2, "#e74c3c")
-    return ("⛔", "WITHDRAWAL", "Avoid routine work. Only essential tasks with strict limits and close monitoring.", 3, "#800000")
+        return ("🔴", "HIGH STRAIN", "Reduce exposure; move to cooler or shaded areas; use ventilation or A/C where feasible; and apply site-approved work–rest controls.", 2, "#e74c3c")
+    return ("⛔", "WITHDRAWAL", "Avoid routine work. Only essential tasks should proceed under site policy, with strict controls and close monitoring.", 3, "#800000")
 
 wbgt_eff = ss.get("wbgt_eff_c", None)
 wbgt_base = ss.get("wbgt_base_frozen", None)
@@ -1743,7 +1747,7 @@ else:
 
 hsp_value_disp = f"{hsp:.2f}" if hsp is not None else "—"
 hsp_sub = f"{h_icon} {h_band}" if hsp is not None else "Baseline WBGT not available (HSP not computed)"
-hsp_foot = f"Operational Cooling Capacity (MWL proxy): {mwl_op:.0f} W/m²" if mwl_op is not None else "Provide baseline WBGT to enable HSP."
+hsp_foot = f"Modeled Cooling Capacity (MWL proxy): {mwl_op:.0f} W/m²" if mwl_op is not None else "Provide baseline WBGT to enable HSP."
 mwl_loss = (float(mwl_env) - float(mwl_op)) if (mwl_env is not None and mwl_op is not None) else None
 
 # -----------------------------
@@ -1793,13 +1797,13 @@ if _label.startswith("LOW"):
     decision_message = "Maintain hydration and routine supervision."
 elif _label.startswith("CAUTION"):
     decision_title = "🟠 INCREASE SUPERVISION"
-    decision_message = "Enforce hydration and planned work-rest cycles."
+    decision_message = "Enforce hydration and follow site-approved work–rest practices."
 elif _label.startswith("HIGH"):
     decision_title = "🔴 REDUCE HEAT EXPOSURE"
-    decision_message = "Short work periods, cooling breaks, and close worker monitoring required."
+    decision_message = "Apply site-approved work–rest controls, provide cooling opportunities, and maintain close worker monitoring."
 else:
     decision_title = "⛔ ESSENTIAL WORK ONLY"
-    decision_message = "Avoid routine work. Apply strict heat controls and continuous monitoring."
+    decision_message = "Avoid routine work. Only essential tasks should proceed under site policy, with strict heat controls and continuous monitoring."
 
 st.markdown("### 🎛 Supervisor Decision Banner")
 if _label.startswith("LOW"):
@@ -1826,8 +1830,8 @@ if _label.startswith("LOW"):
         "Do not exceed ~1.5 L/hour",
     ]
     workrest_lines = [
-        "Continuous self-paced work acceptable",
-        "Routine breaks as per site practice",
+        "Continuous self-paced work acceptable where permitted",
+        "Follow normal site work–rest practice and routine breaks",
     ]
     cooling_lines = [
         "Shade and airflow preferred for comfort",
@@ -1840,11 +1844,11 @@ if _label.startswith("LOW"):
 elif _label.startswith("CAUTION"):
     hydration_lines = [
         "250 mL every 20–30 minutes",
-        "If sweating heavily, hypotonic electrolytes periodically",
+        "If sweating heavily, consider hypotonic electrolytes periodically",
         "Do not exceed ~1.5 L/hour",
     ]
     workrest_lines = [
-        "Planned rest breaks in shade / cool area",
+        "Follow site work–rest practice with rest breaks in shade / cool area",
         "Reduce peak workload; encourage self-pacing",
     ]
     cooling_lines = [
@@ -1860,11 +1864,11 @@ elif _label.startswith("CAUTION"):
 elif _label.startswith("HIGH"):
     hydration_lines = [
         "250 mL every 15–20 minutes",
-        "Electrolytes with heavy sweating",
+        "Consider electrolytes if heavy sweating occurs",
         "Avoid over-drinking (>~1.5 L/hour)",
     ]
     workrest_lines = [
-        "Short work–rest cycles; enforce breaks",
+        "Use site-approved work–rest controls and enforce recovery breaks",
         "Move to cooler/shaded areas when possible",
         "Reduce physical intensity; rotate workers",
     ]
@@ -1887,8 +1891,8 @@ else:  # WITHDRAWAL
     workrest_lines = [
         "Restrict activity to absolutely essential work only",
         "Avoid routine, non-urgent, or deferrable tasks",
-        "Keep any unavoidable exposure periods as short as possible; in very severe conditions, limiting work periods to about 20 minutes at a time may be a prudent operational limit unless cooling conditions improve",
-        "Mandatory recovery in a cool zone between exposure periods with strong self-pacing",
+        "Any unavoidable exposure should follow site policy, with the shortest practical exposure and protected recovery in a cool zone between exposure periods",
+        "Maintain strong self-pacing and close supervision throughout",
     ]
     cooling_lines = [
         "Provide immediate workplace cooling (A/C, fans, shade, cooled rest point, ice towels where available)",
@@ -2057,21 +2061,27 @@ f"""
 unsafe_allow_html=True
 )
 
+
 with st.expander("ℹ️ HSP Details (Tap To Expand)", expanded=False):
     st.markdown("**HSP Field Guide**")
+
     st.markdown(
-        """
-- 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  
-- 🟠 **0.80–0.99** → Heat Balance Marginal  
-- 🔴 **HSP ≥ 1.00** → Heat Gain Likely Exceeds Heat Loss  
-"""
+        "- 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  \n"
+        "- 🟠 **0.80–0.99** → Heat Balance Marginal  \n"
+        "- 🔴 **HSP ≥ 1.00** → Heat Gain Likely Exceeds Heat Loss"
     )
+
     if (mwl_env is not None) and (mwl_op is not None):
         st.info(
-            f"Cooling capacity (environmental): {mwl_env:.0f} W/m²\\n"
-            f"Cooling capacity (operational): {mwl_op:.0f} W/m²\\n"
+            f"Cooling capacity (environmental): {mwl_env:.0f} W/m²  \n"
+            f"Cooling capacity (operational): {mwl_op:.0f} W/m²  \n"
             f"Source: {mwl_source} | Cap applied: {mwl_cap:.0f} W/m²"
         )
+# st.info(
+ #           f"Cooling capacity (environmental): {mwl_env:.0f} W/m²\\n"
+  #          f"Cooling capacity (operational): {mwl_op:.0f} W/m²\\n"
+   #         f"Source: {mwl_source} | Cap applied: {mwl_cap:.0f} W/m²"
+    #    )
 
 with st.expander("🧑‍🏭 Worker Messages (Tap To Expand)", expanded=False):
     st.markdown("**English (simple)**")
@@ -2303,13 +2313,13 @@ These prompts support **field supervisors** and do not replace policy.
 - Normal supervision  
 
 **Amber Zone**
-- Enforce breaks  
+- Follow site-approved work–rest practice  
 - Actively monitor symptoms  
 - Provide shade  
 
 **Red / Withdrawal Zone**
 - Stop routine work  
-- Only emergency tasks with medical oversight  
+- Only essential or emergency tasks under site policy and medical / HSE oversight  
 - Mandatory cooling interventions
 """)
 
