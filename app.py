@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.33"
+APP_VERSION = "v1.9.34"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -1555,7 +1555,7 @@ def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
     if wbgt_eff_c < B:
         return ("🟠", "CAUTION", "Increase supervision. Maintain hydration and follow site-approved work–rest practices.", 1, "#f39c12")
     if wbgt_eff_c < C:
-        return ("🔴", "HIGH STRAIN", "Reduce exposure; move to cooler or shaded areas; use ventilation or A/C where feasible; and apply site-approved work–rest controls.", 2, "#e74c3c")
+        return ("🔴", "HIGH STRAIN", "Reduce heat exposure. Move to cooler or shaded areas where feasible. Apply site-approved work–rest controls. Support cooling and maintain close worker monitoring.", 2, "#e74c3c")
     return ("⛔", "WITHDRAWAL", "Avoid routine work. Only essential tasks should proceed under site policy, with strict controls and close monitoring.", 3, "#800000")
 
 wbgt_eff = ss.get("wbgt_eff_c", None)
@@ -1800,7 +1800,7 @@ elif _label.startswith("CAUTION"):
     decision_message = "Enforce hydration and follow site-approved work–rest practices."
 elif _label.startswith("HIGH"):
     decision_title = "🔴 REDUCE HEAT EXPOSURE"
-    decision_message = "Apply site-approved work–rest controls, provide cooling opportunities, and maintain close worker monitoring."
+    decision_message = "Reduce heat exposure. Apply site-approved work–rest controls. Provide cooling opportunities and maintain close worker monitoring."
 else:
     decision_title = "⛔ ESSENTIAL WORK ONLY"
     decision_message = "Avoid routine work. Only essential tasks should proceed under site policy, with strict heat controls and continuous monitoring."
@@ -1825,9 +1825,9 @@ def _bullets(lines):
 # Action content by risk
 if _label.startswith("LOW"):
     hydration_lines = [
-        "Encourage regular drinking (cool water)",
-        "~250 mL every 30 minutes",
-        "Do not exceed ~1.5 L/hour",
+        "Ensure availability of cool potable drinking water",
+        "Encourage regular fluid intake aligned with site hydration practices",
+        "Reinforce hydration through supervisory prompts (e.g., safe-start / toolbox routines)",
     ]
     workrest_lines = [
         "Continuous self-paced work acceptable where permitted",
@@ -1835,37 +1835,37 @@ if _label.startswith("LOW"):
     ]
     cooling_lines = [
         "Shade and airflow preferred for comfort",
-        "Cooling towels if available",
+        "Encourage use of shaded or cooler areas during normal breaks",
     ]
     monitoring_lines = [
         "Routine observation by supervisor / buddy",
-        "Pay attention to new/returning workers",
+        "Pay attention to new/returning workers and those reporting fatigue",
     ]
 elif _label.startswith("CAUTION"):
     hydration_lines = [
-        "250 mL every 20–30 minutes",
-        "If sweating heavily, consider hypotonic electrolytes periodically",
-        "Do not exceed ~1.5 L/hour",
+        "Reinforce regular fluid intake aligned with site hydration practices",
+        "Consider site-approved electrolyte replacement when sweating is heavy or prolonged",
+        "Use structured supervisory prompts to support hydration adherence",
     ]
     workrest_lines = [
         "Follow site work–rest practice with rest breaks in shade / cool area",
         "Reduce peak workload; encourage self-pacing",
     ]
     cooling_lines = [
-        "Prioritize shade + airflow",
-        "Cooling towels if available",
-        "Consider A/C or fans where feasible",
+        "Prioritize shade, airflow, and cooler rest areas",
+        "Encourage use of site-provided cooling aids where available",
+        "Consider fans or air-conditioned recovery areas where feasible",
     ]
     monitoring_lines = [
-        "Active checks (buddy system + supervisor)",
-        "Extra attention to new/returning workers",
-        "Encourage early reporting of symptoms",
+        "Active checks by supervisor / buddy",
+        "Extra attention to new/returning workers and other higher-risk individuals",
+        "Encourage early reporting of symptoms or reduced tolerance",
     ]
 elif _label.startswith("HIGH"):
     hydration_lines = [
-        "250 mL every 15–20 minutes",
-        "Consider electrolytes if heavy sweating occurs",
-        "Avoid over-drinking (>~1.5 L/hour)",
+        "Maintain ready access to cool drinking water in recovery areas",
+        "Reinforce hydration through structured prompts (e.g., start-of-shift and break-time drinking)",
+        "Consider site-approved electrolyte replacement when sweating is heavy or prolonged",
     ]
     workrest_lines = [
         "Use site-approved work–rest controls and enforce recovery breaks",
@@ -1873,20 +1873,20 @@ elif _label.startswith("HIGH"):
         "Reduce physical intensity; rotate workers",
     ]
     cooling_lines = [
-        "Active cooling: fans/A/C where possible",
-        "Cooling vests/towels or ice slurry if available",
-        "Pre-cool before re-entry if repeated exposures",
+        "Use active cooling measures where feasible (fans, A/C, cooled rest areas)",
+        "Use site-provided cooling aids where available",
+        "Ensure adequate cooling before re-entry when repeated exposure is unavoidable",
     ]
     monitoring_lines = [
-        "Close monitoring; frequent symptom checks",
+        "Maintain close monitoring with frequent symptom checks",
         "Stop work and notify medical/HSE support if symptoms develop",
-        "Have emergency plan ready (heat illness response)",
+        "Keep heat-illness response arrangements ready",
     ]
 else:  # WITHDRAWAL
     hydration_lines = [
-        "Hydrate only in a cool recovery area; monitor intake closely",
-        "Electrolytes if sweating continues or repeated short exposure periods cannot be avoided",
-        "Medical evaluation if symptoms develop, recovery is delayed, or complaints continue",
+        "Provide hydration only in a cool recovery area with close supervision",
+        "Follow site medical/HSE protocols when sweating continues or repeated unavoidable short exposures occur",
+        "Seek medical review if symptoms develop, recovery is delayed, or complaints continue",
     ]
     workrest_lines = [
         "Restrict activity to absolutely essential work only",
@@ -1895,12 +1895,12 @@ else:  # WITHDRAWAL
         "Maintain strong self-pacing and close supervision throughout",
     ]
     cooling_lines = [
-        "Provide immediate workplace cooling (A/C, fans, shade, cooled rest point, ice towels where available)",
-        "Use pre-cooling or active cooling before re-entry when repeated exposures cannot be avoided",
+        "Provide immediate cooling in the coolest available area",
+        "Use active cooling before any unavoidable re-entry if permitted by site policy",
     ]
     monitoring_lines = [
         "Buddy system and close supervisor observation are required",
-        "Allow additional recovery time with hydration and cooling support. If symptoms develop or recovery is delayed, notify the medical team or follow site emergency procedures",
+        "Allow additional recovery time with hydration and cooling support; notify medical/HSE support if symptoms develop or recovery is delayed",
         "Escalate promptly for confusion, collapse, severe cramps, vomiting, or other severe symptoms",
     ]
 
@@ -2075,19 +2075,19 @@ with st.expander("ℹ️ HSP Details (Tap To Expand)", expanded=False):
         st.info(
             f"Cooling capacity (environmental): {mwl_env:.0f} W/m²  \n"
             f"Cooling capacity (operational): {mwl_op:.0f} W/m²  \n"
-            f"Source: {mwl_source} | Cap applied: {mwl_cap:.0f} W/m²"
+            f"Source: {mwl_source} | Operational capacity reflects worksite conditions (PPE / enclosure / radiant load)"
         )
-# st.info(
- #           f"Cooling capacity (environmental): {mwl_env:.0f} W/m²\\n"
-  #          f"Cooling capacity (operational): {mwl_op:.0f} W/m²\\n"
-   #         f"Source: {mwl_source} | Cap applied: {mwl_cap:.0f} W/m²"
-    #    )
+
+ 
+ 
+   
+   
 
 with st.expander("🧑‍🏭 Worker Messages (Tap To Expand)", expanded=False):
     st.markdown("**English (simple)**")
     st.markdown(
         """
-- Drink small amounts often (Do Not Wait for Thirst).
+- Drink small amounts regularly (Do not wait for thirst). Follow team hydration practices when prompted.
 - Slow down (Self-Pace). Take Cooling Breaks in Shade when told — and Even Earlier if You feel unwell.
 - Tell your supervisor immediately if you feel unwell, dizzy, weak, confused, or nauseated.
 """
