@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.34"
+APP_VERSION = "v1.9.35"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -791,6 +791,8 @@ if ss.get("confirm_reset", False):
                 "wbgt_instr",
                 # Any cached geo results
                 "geo_results","geo_query_sig","place_query","place_label",
+                # Audit/history state — reset starts a clean saved-history table
+                "audit_log", "save_counter", "last_saved_id",
                 # Diagnostics (safe to clear)
                 "wb_mwl_c",
             ]
@@ -2106,6 +2108,7 @@ if ss.get("debug_mode", False):
 
 st.markdown("---")
 st.markdown("## 📜 Heat-Stress Audit History (Saved Records)")
+st.caption("This table shows records that have been explicitly saved. After changing city or inputs, click **Apply Worksite Additional Factors & Compute**, then **Save Current Assessment** to add the new assessment. Reset now clears this saved-history table for a fresh assessment session.")
 
 # Ensure audit log exists
 if "audit_log" not in ss:
@@ -2118,19 +2121,28 @@ if "last_saved_id" not in ss:
     ss["last_saved_id"] = -1
 
 # Controls
-colA, colB = st.columns([1.0, 1.0], vertical_alignment="center")
+colA, colB, colC = st.columns([1.0, 1.0, 1.0], vertical_alignment="center")
 with colA:
     save_now = st.button(
-        "💾 Save Record",
+        "💾 Save Current Assessment",
         type="primary",
         use_container_width=True,
         key="btn_save_record_block8",
     )
 with colB:
-    st.caption("Save stores the current computed decision. Compute does not create saved records.")
+    st.caption("Compute updates the on-screen snapshot. Save adds the current snapshot to this audit table.")
+with colC:
+    if st.button("🧹 Clear Audit History", use_container_width=True, key="btn_clear_audit_block8"):
+        ss["audit_log"] = []
+        ss["save_counter"] = 0
+        ss["last_saved_id"] = -1
+        st.rerun()
 
 if save_now:
-    ss["save_counter"] += 1
+    if ss.get("wbgt_eff_c") is None:
+        st.warning("Please apply worksite additional factors and compute before saving a record.")
+    else:
+        ss["save_counter"] += 1
 
 current_save_id = ss.get("save_counter", 0)
 
