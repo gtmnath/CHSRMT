@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.35"
+APP_VERSION = "v1.9.36-validation-ui"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -316,6 +316,78 @@ def inhg_to_kpa(i): return i / 0.2953
 
 def fmt_temp(temp_c, unit):
     return f"{temp_c:.1f} °C" if unit == "metric" else f"{c_to_f(temp_c):.1f} °F"
+
+
+# ----------------------------
+# HART input validation guardrails (v1.9.36)
+# ----------------------------
+HART_VALIDATION_LIMITS = {
+    "db_c": {"label": "Dry Bulb Temperature (DB)", "hard_min": -10.0, "hard_max": 60.0, "warn_min": 15.0, "warn_max": 55.0, "unit": "°C"},
+    "rh_pct": {"label": "Relative Humidity (RH)", "hard_min": 0.0, "hard_max": 100.0, "warn_min": 5.0, "warn_max": 100.0, "unit": "%"},
+    "gt_c": {"label": "Globe Temperature (GT)", "hard_min": -10.0, "hard_max": 90.0, "warn_min": 15.0, "warn_max": 80.0, "unit": "°C"},
+    "ws_ms": {"label": "Wind Speed (WS)", "hard_min": 0.0, "hard_max": 20.0, "warn_min": 0.0, "warn_max": 10.0, "unit": "m/s"},
+    "p_kpa": {"label": "Barometric Pressure", "hard_min": 60.0, "hard_max": 110.0, "warn_min": 75.0, "warn_max": 105.0, "unit": "kPa"},
+    "wbgt_instr": {"label": "Instrument WBGT", "hard_min": 0.0, "hard_max": 60.0, "warn_min": 15.0, "warn_max": 45.0, "unit": "°C"},
+    "twl_measured": {"label": "Instrument TWL", "hard_min": 0.0, "hard_max": 500.0, "warn_min": 50.0, "warn_max": 450.0, "unit": "W/m²"},
+}
+
+def hart_clamp_value(key, value):
+    """Clamp an existing session value before feeding it into Streamlit number_input."""
+    spec = HART_VALIDATION_LIMITS.get(key)
+    if not spec:
+        return value
+    try:
+        v = float(value)
+    except Exception:
+        return spec["hard_min"]
+    return max(spec["hard_min"], min(spec["hard_max"], v))
+
+def hart_validate_value(key: str, value: float):
+    """Return (is_valid, message_type, message). message_type = 'error', 'warning', or None."""
+    spec = HART_VALIDATION_LIMITS.get(key)
+    if spec is None:
+        return True, None, ""
+    try:
+        v = float(value)
+    except Exception:
+        return False, "error", f"{spec['label']} must be a number."
+    unit = spec["unit"]
+    if v < spec["hard_min"] or v > spec["hard_max"]:
+        return (False, "error", f"{spec['label']} = {v:g} {unit} is outside the allowed range ({spec['hard_min']:g}–{spec['hard_max']:g} {unit}). Please check the entry.")
+    if v < spec["warn_min"] or v > spec["warn_max"]:
+        return (True, "warning", f"{spec['label']} = {v:g} {unit} is unusual for routine field use. Please confirm the value and units are correct.")
+    return True, None, ""
+
+def hart_validate_all_inputs(db_c, rh_pct, gt_c, ws_ms, p_kpa, wbgt_instr=0.0, twl_measured=0.0):
+    checks = [("db_c", db_c), ("rh_pct", rh_pct), ("gt_c", gt_c), ("ws_ms", ws_ms), ("p_kpa", p_kpa)]
+    try:
+        if wbgt_instr and float(wbgt_instr) > 0:
+            checks.append(("wbgt_instr", wbgt_instr))
+    except Exception:
+        checks.append(("wbgt_instr", wbgt_instr))
+    try:
+        if twl_measured and float(twl_measured) > 0:
+            checks.append(("twl_measured", twl_measured))
+    except Exception:
+        checks.append(("twl_measured", twl_measured))
+    errors, warnings = [], []
+    for key, value in checks:
+        ok, msg_type, msg = hart_validate_value(key, value)
+        if msg_type == "error":
+            errors.append(msg)
+        elif msg_type == "warning":
+            warnings.append(msg)
+    return errors, warnings
+
+def hart_show_validation_messages(errors, warnings):
+    if errors:
+        st.error("Please correct the following input issue(s) before calculation:")
+        for e in errors:
+            st.write(f"• {e}")
+        st.stop()
+    for w in warnings:
+        st.warning(w)
+
 
 # ----------------------------
 # Locked HSP band edges (DO NOT change per run)
@@ -1018,40 +1090,46 @@ col1, col2, col3, col4, col5 = st.columns(5)
 # --- Dry bulb ---
 with col1:
     if ss["units"] == "metric":
-        ss["db_c"] = st.number_input("Dry Bulb (°C)", value=float(ss.get("db_c", 30.0)))
+        ss["db_c"] = st.number_input("Dry Bulb (°C)", min_value=-10.0, max_value=60.0, value=float(hart_clamp_value("db_c", ss.get("db_c", 30.0))), step=0.1)
     else:
-        db_f = st.number_input("Dry Bulb (°F)", value=float(c_to_f(ss.get("db_c", 30.0))))
+        db_f = st.number_input("Dry Bulb (°F)", min_value=float(c_to_f(-10.0)), max_value=float(c_to_f(60.0)), value=float(c_to_f(hart_clamp_value("db_c", ss.get("db_c", 30.0)))), step=0.1)
         ss["db_c"] = f_to_c(db_f)
 
 # --- RH ---
 with col2:
     ss["rh_pct"] = st.number_input(
-        "RH (%)", value=float(ss.get("rh_pct", 50.0)), min_value=0.0, max_value=100.0
+        "RH (%)", value=float(hart_clamp_value("rh_pct", ss.get("rh_pct", 50.0))), min_value=0.0, max_value=100.0, step=1.0
     )
 
 # --- Wind ---
 with col3:
     if ss["units"] == "metric":
-        ss["ws_ms"] = st.number_input("Wind (m/s)", value=float(ss.get("ws_ms", 1.0)))
+        ss["ws_ms"] = st.number_input("Wind (m/s)", min_value=0.0, max_value=20.0, value=float(hart_clamp_value("ws_ms", ss.get("ws_ms", 1.0))), step=0.1)
     else:
-        ws_mph = st.number_input("Wind (mph)", value=float(ms_to_mph(ss.get("ws_ms", 1.0))))
+        ws_mph = st.number_input("Wind (mph)", min_value=0.0, max_value=float(ms_to_mph(20.0)), value=float(ms_to_mph(hart_clamp_value("ws_ms", ss.get("ws_ms", 1.0)))), step=0.1)
         ss["ws_ms"] = mph_to_ms(ws_mph)
 
 # --- Pressure ---
 with col4:
     if ss["units"] == "metric":
-        ss["p_kpa"] = st.number_input("Pressure (kPa)", min_value=70.0, max_value=110.0, value=float(ss.get("p_kpa", 101.3)), step=0.1, help="Default is sea level (~101.3 kPa). Enter local pressure if known or if working at higher elevation; otherwise leave default.")
+        ss["p_kpa"] = st.number_input("Pressure (kPa)", min_value=60.0, max_value=110.0, value=float(hart_clamp_value("p_kpa", ss.get("p_kpa", 101.3))), step=0.1, help="Default is sea level (~101.3 kPa). Enter local pressure if known or if working at higher elevation; otherwise leave default.")
     else:
-        p_inhg = st.number_input("Pressure (inHg)", min_value=20.0, max_value=33.0, value=float(kpa_to_inhg(ss.get("p_kpa", 101.3))), step=0.05, help="Default is sea level (~29.92 inHg). Enter local pressure if known; otherwise leave default.")
+        p_inhg = st.number_input("Pressure (inHg)", min_value=float(kpa_to_inhg(60.0)), max_value=float(kpa_to_inhg(110.0)), value=float(kpa_to_inhg(hart_clamp_value("p_kpa", ss.get("p_kpa", 101.3)))), step=0.05, help="Default is sea level (~29.92 inHg). Enter local pressure if known; otherwise leave default.")
         ss["p_kpa"] = inhg_to_kpa(p_inhg)
 
 with col5:
     if ss["units"] == "metric":
-        ss["gt_c"] = st.number_input("Globe Temp (°C)", value=float(ss.get("gt_c", ss.get("db_c", 30.0) + 3.0)))
+        ss["gt_c"] = st.number_input("Globe Temp (°C)", min_value=-10.0, max_value=90.0, value=float(hart_clamp_value("gt_c", ss.get("gt_c", ss.get("db_c", 30.0) + 3.0))), step=0.1)
     else:
-        gt_f = st.number_input("Globe Temp (°F)", value=float(c_to_f(ss.get("gt_c", ss.get("db_c", 30.0) + 3.0))))
+        gt_f = st.number_input("Globe Temp (°F)", min_value=float(c_to_f(-10.0)), max_value=float(c_to_f(90.0)), value=float(c_to_f(hart_clamp_value("gt_c", ss.get("gt_c", ss.get("db_c", 30.0) + 3.0)))), step=0.1)
         ss["gt_c"] = f_to_c(gt_f)
 
+# Validate environmental inputs before baseline/WBGT/HSP calculations.
+_val_errors, _val_warnings = hart_validate_all_inputs(
+    ss.get("db_c"), ss.get("rh_pct"), ss.get("gt_c"), ss.get("ws_ms"), ss.get("p_kpa"),
+    ss.get("wbgt_instr", 0.0), ss.get("twl_measured", 0.0)
+)
+hart_show_validation_messages(_val_errors, _val_warnings)
 
 # -----------------------------
 # Mark environment dirty ONLY if something actually changed
@@ -1160,12 +1238,19 @@ with st.expander("🧭 Optional Lookup (Baseline WBGT + Instrument Reference)", 
     # ---------------------------------------------------------------
     st.subheader("Computed Baseline (Before additional worksite factors)")
     c1, c2, c3 = st.columns(3)
-    c1.metric("Natural Wet-Bulb", fmt_temp(twb_c, ss["units"]))
-    c2.metric("WBGT Baseline (Frozen)", fmt_temp(ss["wbgt_base_frozen"], ss["units"]))
+    c1.metric("WBGT Baseline (Frozen)", fmt_temp(ss["wbgt_base_frozen"], ss["units"]))
+    c2.metric("Globe Temp", fmt_temp(gt_c, ss["units"]))
     c3.metric(
         "Wind",
         f"{ws_ms:.1f} m/s" if ss["units"] == "metric" else f"{ms_to_mph(ws_ms):.1f} mph"
     )
+    with st.expander("Advanced Environmental Details (includes Wet-Bulb)", expanded=False):
+        st.write(f"**Dry Bulb (DB):** {fmt_temp(db_c, ss['units'])}")
+        st.write(f"**Relative Humidity (RH):** {rh:.0f} %")
+        st.write(f"**Estimated Natural Wet-Bulb (WB):** {fmt_temp(twb_c, ss['units'])}")
+        st.write(f"**Globe Temperature (GT):** {fmt_temp(gt_c, ss['units'])}")
+        st.write(f"**Wind Speed (WS):** {ws_ms:.2f} m/s" if ss['units'] == 'metric' else f"**Wind Speed (WS):** {ms_to_mph(ws_ms):.2f} mph")
+        st.caption("Wet-bulb is retained for technical transparency. Routine supervisor decisions should use WBGT/HSP guidance and site policy.")
 
     st.markdown("---")
     st.markdown("**Instrument Reference (Optional)**")
@@ -1179,14 +1264,16 @@ with st.expander("🧭 Optional Lookup (Baseline WBGT + Instrument Reference)", 
         ss["twl_measured"] = st.number_input(
             "Instrument TWL (W/m²)",
             min_value=0.0,
-            value=float(ss.get("twl_measured", 0.0)),
+            value=float(hart_clamp_value("twl_measured", ss.get("twl_measured", 0.0))),
+            max_value=500.0,
             step=5.0
         )
     with colB:
         ss["wbgt_instr"] = st.number_input(
             "Instrument WBGT (°C)",
             min_value=0.0,
-            value=float(ss.get("wbgt_instr", 0.0)),
+            value=float(hart_clamp_value("wbgt_instr", ss.get("wbgt_instr", 0.0))),
+            max_value=60.0,
             step=0.1
         )
 
@@ -1485,7 +1572,7 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
 }
 
 /* KPI cards */
-.kpi-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.6rem; }
+.kpi-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem; }
 @media (max-width: 1100px){ .kpi-grid{ grid-template-columns: 1fr; } }
 
 .kpi-card{
@@ -1546,7 +1633,7 @@ div.block-container { padding-top: 1.05rem; padding-bottom: 1.15rem; }
 """, unsafe_allow_html=True)
 
 st.markdown("<br><br>", unsafe_allow_html=True)
-st.markdown("## 🧭 Heat-Stress Snapshot (WBGT Guideline + HSP + Wet-Bulb)")
+st.markdown("## 🧭 Heat-Stress Snapshot (WBGT Guideline + HSP)")
 
 # -----------------------------
 # WBGT guideline banding (4-level)
@@ -2046,23 +2133,19 @@ f"""
     <div class="kpi-foot">{hsp_foot}</div>
   </div>
 
-  <div class="kpi-card" style="border-left:7px solid {wb_phys_color};">
-    <div class="kpi-label">Wet-Bulb (Evaporation Capacity)</div>
-    <div class="kpi-value">{wb_disp}</div>
-    <div class="kpi-sub"><b>{wb_phys_icon} {wb_phys_msg}</b></div>
-    <div class="kpi-foot">
-      🟢 Cooling Effective (WB &lt; {wb1})<br>
-      🟡 Cooling Starting to Limit ({wb1}–{wb2})<br>
-      🟠 Cooling Limited ({wb2}–{wb3})<br>
-      🔴 Cooling Compromised (≥ {wb3})
-    </div>
-  </div>
-
 </div>
 """,
 unsafe_allow_html=True
 )
 
+with st.expander("Advanced Environmental Details (Wet-Bulb / Evaporation Capacity)", expanded=False):
+    st.write(f"**Wet-Bulb (technical reference):** {wb_disp}")
+    st.write(f"**Wet-Bulb interpretation:** {wb_phys_icon} {wb_phys_msg}")
+    st.write(f"• Cooling Effective: WB < {wb1}")
+    st.write(f"• Cooling Starting to Limit: {wb1}–{wb2}")
+    st.write(f"• Cooling Limited: {wb2}–{wb3}")
+    st.write(f"• Cooling Compromised: ≥ {wb3}")
+    st.caption("This value is hidden from the main supervisor snapshot to reduce confusion. It remains available for IH/OH technical review.")
 
 with st.expander("ℹ️ HSP Details (Tap To Expand)", expanded=False):
     st.markdown("**HSP Field Guide**")
