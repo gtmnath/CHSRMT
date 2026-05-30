@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.36-validation-ui"
+APP_VERSION = "v1.9.52-github-niosh-osha-hsp-wind-visible-tuned"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -432,13 +432,15 @@ def _sanitize_temp_c(x):
 def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt_c: float) -> float:
     """Estimate MWL (cooling capacity) in W/m².
 
-    Design intent:
-    - MWL should generally DECREASE as WBGT increases (more heat load).
-    - MWL should INCREASE with wind (convective/evaporative support).
-    - MWL should DECREASE with radiant load (GT-DB gap).
-    - MWL should DECREASE as RH rises (evaporation suppressed), with a stronger penalty when Wet Bulb is high.
+    Design intent for the GitHub-safe update:
+    - Preserve the existing NIOSH/OSHA-style WBGT threshold workflow elsewhere in the app.
+    - Use MWL/HSP only as a cooling-capacity cross-check, not as a replacement threshold system.
+    - Avoid an excessively steep MWL collapse at higher WBGT values; the decline is intentionally
+      smooth and moderated so HSP remains field-interpretable instead of behaving like a hard TWL band.
+    - Keep the physiological direction correct: higher WBGT, higher RH/wet-bulb burden, and radiant
+      loading reduce capacity; air movement improves capacity.
 
-    Note: This is a conservative proxy (not a full physiological TWL engine).
+    Note: This remains a conservative proxy, not a full physiological TWL engine.
     """
     # Guard rails
     db_c = float(db_c)
@@ -447,29 +449,36 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
     gt_c = float(gt_c)
     wbgt_c = float(wbgt_c)
 
-    # ── 1) Base MWL from WBGT (smooth, bounded) ──
-    mwl_base = 600.0 - 0.30 * (wbgt_c ** 2)  # higher WBGT → lower MWL
-    mwl_base = max(0.0, min(450.0, mwl_base))
+    # ── 1) Base MWL from WBGT (smooth, high-WBGT decline deliberately flattened) ──
+    # Earlier versions used a stronger quadratic drop. That made HSP rise too abruptly
+    # at high WBGT and unintentionally resemble a TWL numeric threshold. This curve
+    # preserves monotonic decline while keeping HSP as a decision-support margin signal.
+    if wbgt_c <= 30.0:
+        mwl_base = 405.0 - 5.5 * (wbgt_c - 25.0)
+    else:
+        # Above 30 °C WBGT, decline continues but is flattened progressively.
+        mwl_base = 377.5 - 4.0 * (wbgt_c - 30.0) - 0.35 * ((max(0.0, wbgt_c - 33.0)) ** 1.35)
+    mwl_base = max(150.0, min(430.0, mwl_base))
 
     # ── 2) Wind modifier (log response, capped) ──
-    wind_mod = 1.0 + 0.18 * math.log1p(ws_ms)  # 0 m/s → 1.0, 1 m/s → ~1.12
-    wind_mod = max(0.85, min(1.40, wind_mod))
+    wind_mod = 1.0 + 0.16 * math.log1p(ws_ms)  # 0 m/s → 1.0, 1 m/s → ~1.11
+    wind_mod = max(0.88, min(1.32, wind_mod))
 
-    # ── 3) Radiant modifier (GT above DB reduces capacity) ──
+    # ── 3) Radiant modifier (GT above DB reduces capacity, but not as a hidden hard threshold) ──
     delta_gt = max(0.0, gt_c - db_c)
-    rad_mod = 1.0 - 0.005 * delta_gt
-    rad_mod = max(0.75, min(1.05, rad_mod))
+    rad_mod = 1.0 - 0.0045 * delta_gt
+    rad_mod = max(0.78, min(1.04, rad_mod))
 
     # ── 4) RH modifier (higher RH suppresses evaporation) ──
     if rh_pct <= 20.0:
-        rh_mod = 1.0 + 0.08 * (20.0 - rh_pct) / 20.0   # up to +8%
+        rh_mod = 1.0 + 0.06 * (20.0 - rh_pct) / 20.0   # up to +6%
     elif rh_pct <= 60.0:
-        rh_mod = 1.0 - 0.10 * (rh_pct - 20.0) / 40.0   # down to 0.90
+        rh_mod = 1.0 - 0.08 * (rh_pct - 20.0) / 40.0   # down to 0.92
     else:
-        rh_mod = 0.90 - 0.35 * (rh_pct - 60.0) / 40.0  # down to 0.55 at RH 100
-    rh_mod = max(0.55, min(1.08, rh_mod))
+        rh_mod = 0.92 - 0.24 * (rh_pct - 60.0) / 40.0  # down to 0.68 at RH 100
+    rh_mod = max(0.68, min(1.06, rh_mod))
 
-    # ── 5) Extra penalty when Wet Bulb is high (evaporation “ceiling”) ──
+    # ── 5) Extra penalty when Wet Bulb is high (evaporation ceiling signal) ──
     def _stull_wb_c(t_c: float, rh: float) -> float:
         rh = max(0.0, min(100.0, rh))
         return (
@@ -481,15 +490,15 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
         )
 
     wb_c = _stull_wb_c(db_c, rh_pct)
-    ss["wb_mwl_c"] = wb_c  # ✅ diagnostic only; do not overwrite main WB used elsewhere
+    ss["wb_mwl_c"] = wb_c  # diagnostic only; do not overwrite the main WB used elsewhere
     if wb_c > 25.0:
-        wb_pen = 1.0 - 0.015 * (wb_c - 25.0)   # 30°C WB → ~0.925
-        wb_pen = max(0.55, min(1.0, wb_pen))
+        wb_pen = 1.0 - 0.010 * (wb_c - 25.0)
+        wb_pen = max(0.70, min(1.0, wb_pen))
     else:
         wb_pen = 1.0
 
     mwl = mwl_base * wind_mod * rad_mod * rh_mod * wb_pen
-    mwl = max(0.0, min(450.0, mwl))
+    mwl = max(120.0, min(430.0, mwl))
     return float(mwl)
 
 def apply_capacity_penalties(mwl_env: float, ppe_c: float, veh_c: float, rad_c: float, adh_c: float) -> float:
@@ -1756,24 +1765,53 @@ if wbgt_env is not None:
         mwl_raw = float(estimate_mwl_wm2(db_c=db, rh_pct=rh, ws_ms=ws, gt_c=gt, wbgt_c=wbgt_env))
         mwl_source = "Model"
 
-    if gt >= 50 and ws < 0.5:
-        mwl_cap = 115
-    elif gt >= 45:
-        mwl_cap = 140
-    elif wbgt_env >= 33:
-        mwl_cap = 170
-    elif wbgt_env >= 30:
-        mwl_cap = 220
-    else:
-        mwl_cap = 280
+    # Smooth operational ceiling for model stability.
+    # IMPORTANT: This is NOT a WBGT threshold system and does not change the
+    # NIOSH/OSHA-style WBGT cut-points in Block 6.
+    #
+    # v1.9.49 correction:
+    # The previous GitHub-safe version used stepwise caps (330 / 285 / 255 W/m²).
+    # That created artificial HSP jumps around WBGT ≈ 30 and 33 °C. This smooth
+    # ceiling keeps the intended conservative behavior while removing those
+    # discontinuities.
+    wbgt_excess_28 = max(0.0, wbgt_env - 28.0)
+    wbgt_excess_32 = max(0.0, wbgt_env - 32.0)
+    mwl_cap = 332.0 - (6.5 * wbgt_excess_28) - (1.8 * (wbgt_excess_32 ** 1.35))
+
+    # v1.9.50–v1.9.52 correction: make air movement visible in the MWL/HSP result.
+    # In v1.9.49 the smooth WBGT ceiling dominated the raw MWL estimate, so WS
+    # changes from ~0.5 to 6 m/s produced almost no displayed MWL/HSP change.
+    # This bonus is deliberately modest, nonlinear, and capped: it gives a clear
+    # cooling benefit from 0.5 → 2–3 m/s, then plateaus so high wind does not
+    # make a hot/radiant task look unrealistically safe.
+    # v1.9.52 tuning: increase visible evaporative-cooling response.
+    # Rationale: field users should see a meaningful but still conservative improvement
+    # in modeled cooling capacity as air movement increases from ~0.5 to 2–3 m/s.
+    # The response remains nonlinear and capped; it is NOT intended to numerically
+    # reproduce TWL values, and it should not make very high wind appear automatically safe.
+    wind_cap_bonus = 34.0 * math.log1p(max(0.0, ws - 0.5)) / math.log1p(3.5)
+    wind_cap_bonus = max(0.0, min(45.0, wind_cap_bonus))
+    mwl_cap += wind_cap_bonus
+
+    # Additional environmental ceiling only for extreme radiant / low-air-movement
+    # situations. These are also smooth, not hard WBGT bands.
+    radiant_excess = max(0.0, gt - 45.0)
+    low_wind_excess = max(0.0, 0.5 - ws)
+    mwl_cap -= 2.5 * radiant_excess
+    mwl_cap -= 20.0 * low_wind_excess
+
+    # Keep within plausible bounds for this screening proxy.
+    mwl_cap = max(180.0, min(430.0, mwl_cap))
 
     env_sig = (round(db,2), round(rh,2), round(ws,2), round(gt,2), round(wbgt_env,2), round(pen_c,2))
     if ss.get("mwl_env_sig") != env_sig:
         ss["mwl_env_sig"] = env_sig
         ss.pop("mwl_env_prev", None)
 
-    prev_mwl = float(ss.get("mwl_env_prev", 9999.0))
-    mwl_env = min(float(mwl_raw), float(mwl_cap), float(prev_mwl))
+    # Use the current raw estimate and smooth cap only.
+    # Do not carry a lower prior MWL forward; that could make HSP appear sticky
+    # after inputs are edited.
+    mwl_env = min(float(mwl_raw), float(mwl_cap))
     ss["mwl_env_prev"] = mwl_env
 
     mwl_op = float(apply_capacity_penalties(
@@ -1874,7 +1912,7 @@ wbgt_disp = locals().get("wbgt_disp", None) or locals().get("wbgt_eff_disp", Non
 hsp_value_disp = locals().get("hsp_value_disp", None) or locals().get("hsp_disp", None) or "—"
 
 # Default summary line (kept constant & field-friendly)
-summary_line = locals().get("summary_line", None) or "Use WBGT for policy alignment. Use HSP as a cooling-capacity cross-check when it is more protective."
+summary_line = locals().get("summary_line", None) or "Use WBGT for NIOSH/OSHA-style policy alignment. Use HSP as a cooling-capacity cross-check only when it is more protective."
 
 # -----------------------------
 # Control-panel decision banner
@@ -2139,7 +2177,7 @@ unsafe_allow_html=True
 )
 
 with st.expander("Advanced Environmental Details (Wet-Bulb / Evaporation Capacity)", expanded=False):
-    st.write(f"**Wet-Bulb (technical reference):** {wb_disp}")
+    st.write(f"**Estimated psychrometric wet-bulb from DB/RH (not wind-adjusted):** {wb_disp}")
     st.write(f"**Wet-Bulb interpretation:** {wb_phys_icon} {wb_phys_msg}")
     st.write(f"• Cooling Effective: WB < {wb1}")
     st.write(f"• Cooling Starting to Limit: {wb1}–{wb2}")
