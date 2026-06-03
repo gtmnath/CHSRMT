@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.52-github-niosh-osha-hsp-wind-visible-tuned"
+APP_VERSION = "v1.9.54-github-niosh-osha-iso-hsp-submessages"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -318,6 +318,69 @@ def fmt_temp(temp_c, unit):
     return f"{temp_c:.1f} °C" if unit == "metric" else f"{c_to_f(temp_c):.1f} °F"
 
 
+def interpret_hsp(hsp):
+    """Return icon, short band label, and field-friendly sub-message for HSP."""
+    if hsp is None:
+        return (
+            "⚪",
+            "HSP Not Available",
+            "Provide baseline WBGT to enable HSP interpretation."
+        )
+
+    h = float(hsp)
+
+    # Green band is intentionally subdivided so small but meaningful movement
+    # from PPE / enclosure / radiant factors is visible without alarming the user.
+    if h < 0.55:
+        return (
+            "🟢",
+            "Adequate Cooling Possible",
+            "Routine hydration, supervision, and site-approved heat-stress control measures remain appropriate."
+        )
+    elif h < 0.60:
+        return (
+            "🟢",
+            "Adequate Cooling Possible",
+            "Cooling margin is slightly reduced. Continue hydration, routine supervision, and site-approved heat-stress control measures."
+        )
+    elif h < 0.65:
+        return (
+            "🟢",
+            "Adequate Cooling Still Possible",
+            "PPE or worksite factors are beginning to narrow the cooling margin. Reinforce hydration and supervision."
+        )
+    elif h < 0.70:
+        return (
+            "🟢",
+            "Adequate Cooling Still Possible",
+            "Cooling margin is narrowing further. Confirm heat-stress control measures are in place before prolonged work."
+        )
+    elif h < 0.75:
+        return (
+            "🟢",
+            "Cooling Margin Reducing",
+            "Increase attention to hydration, rest access, and symptom monitoring."
+        )
+    elif h < 0.80:
+        return (
+            "🟢",
+            "Approaching Marginal Cooling",
+            "Prepare to escalate heat-stress control measures if exposure continues or conditions worsen."
+        )
+    elif h < 1.00:
+        return (
+            "🟠",
+            "Cooling Margin Narrowing",
+            "Increase supervision, reinforce hydration practices, and apply site-approved heat-stress control measures."
+        )
+    else:
+        return (
+            "🔴",
+            "Cooling May Be Inadequate",
+            "Heat gain may exceed the body's cooling capacity due to limited sweat evaporation and reduced cooling effectiveness. Escalate heat-stress control measures according to site policy."
+        )
+
+
 # ----------------------------
 # HART input validation guardrails (v1.9.36)
 # ----------------------------
@@ -328,7 +391,7 @@ HART_VALIDATION_LIMITS = {
     "ws_ms": {"label": "Wind Speed (WS)", "hard_min": 0.0, "hard_max": 20.0, "warn_min": 0.0, "warn_max": 10.0, "unit": "m/s"},
     "p_kpa": {"label": "Barometric Pressure", "hard_min": 60.0, "hard_max": 110.0, "warn_min": 75.0, "warn_max": 105.0, "unit": "kPa"},
     "wbgt_instr": {"label": "Instrument WBGT", "hard_min": 0.0, "hard_max": 60.0, "warn_min": 15.0, "warn_max": 45.0, "unit": "°C"},
-    "twl_measured": {"label": "Instrument TWL", "hard_min": 0.0, "hard_max": 500.0, "warn_min": 50.0, "warn_max": 450.0, "unit": "W/m²"},
+    "reference_capacity": {"label": "Reference Cooling Capacity", "hard_min": 0.0, "hard_max": 500.0, "warn_min": 50.0, "warn_max": 450.0, "unit": "W/m²"},
 }
 
 def hart_clamp_value(key, value):
@@ -367,9 +430,9 @@ def hart_validate_all_inputs(db_c, rh_pct, gt_c, ws_ms, p_kpa, wbgt_instr=0.0, t
         checks.append(("wbgt_instr", wbgt_instr))
     try:
         if twl_measured and float(twl_measured) > 0:
-            checks.append(("twl_measured", twl_measured))
+            checks.append(("reference_capacity", twl_measured))
     except Exception:
-        checks.append(("twl_measured", twl_measured))
+        checks.append(("reference_capacity", twl_measured))
     errors, warnings = [], []
     for key, value in checks:
         ok, msg_type, msg = hart_validate_value(key, value)
@@ -397,7 +460,7 @@ HSP_AMBER = 4.0   # Caution
 # else -> Withdrawal
 
 # ----------------------------
-# MWL (Maximum Work Limit – modeled cooling-capacity proxy) model parameters
+# Estimated Cooling Capacity (HART Model) parameters
 # These are "calibration knobs" that we will tune using your field scenarios.
 # ----------------------------
 ss_default("MWL_A0", 450.0)     # base W/m²
@@ -407,7 +470,7 @@ ss_default("MWL_A_wind", 10.0)  # wind benefit weight (sqrt(ws))
 ss_default("MWL_MIN", 60.0)     # clamp
 ss_default("MWL_MAX", 450.0)    # clamp
 
-# Penalty → MWL capacity reductions (W/m² per °C-penalty bucket)
+# Penalty → cooling-capacity reductions (W/m² per °C-penalty bucket)
 ss_default("MWL_PPE_W", 18.0)
 ss_default("MWL_VEH_W", 12.0)
 ss_default("MWL_RAD_W", 10.0)
@@ -430,17 +493,17 @@ def _sanitize_temp_c(x):
         v = v / 10.0
     return v
 def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt_c: float) -> float:
-    """Estimate MWL (cooling capacity) in W/m².
+    """Estimate Cooling Capacity (HART Model) in W/m².
 
     Design intent for the GitHub-safe update:
     - Preserve the existing NIOSH/OSHA-style WBGT threshold workflow elsewhere in the app.
-    - Use MWL/HSP only as a cooling-capacity cross-check, not as a replacement threshold system.
+    - Use HSP only as a cooling-capacity cross-check, not as a replacement threshold system.
     - Avoid an excessively steep MWL collapse at higher WBGT values; the decline is intentionally
-      smooth and moderated so HSP remains field-interpretable instead of behaving like a hard TWL band.
+      smooth and moderated so HSP remains field-interpretable instead of behaving like a hard cooling-capacity band.
     - Keep the physiological direction correct: higher WBGT, higher RH/wet-bulb burden, and radiant
       loading reduce capacity; air movement improves capacity.
 
-    Note: This remains a conservative proxy, not a full physiological TWL engine.
+    Note: This remains a conservative proxy, not a full physiological heat-strain engine.
     """
     # Guard rails
     db_c = float(db_c)
@@ -451,7 +514,7 @@ def estimate_mwl_wm2(db_c: float, rh_pct: float, ws_ms: float, gt_c: float, wbgt
 
     # ── 1) Base MWL from WBGT (smooth, high-WBGT decline deliberately flattened) ──
     # Earlier versions used a stronger quadratic drop. That made HSP rise too abruptly
-    # at high WBGT and unintentionally resemble a TWL numeric threshold. This curve
+    # at high WBGT and unintentionally resemble a cooling-capacity threshold. This curve
     # preserves monotonic decline while keeping HSP as a decision-support margin signal.
     if wbgt_c <= 30.0:
         mwl_base = 405.0 - 5.5 * (wbgt_c - 25.0)
@@ -547,7 +610,7 @@ ss_default("pen_rad_c", 0.0)
 ss_default("pen_adhoc_c", 0.0)
 
 # Instrument references (optional)
-ss_default("twl_measured", 0.0)
+ss_default("reference_capacity", 0.0)
 ss_default("wbgt_instr", 0.0)
 
 # Logging
@@ -662,8 +725,7 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
     st.markdown("### What This Tool Does")
     st.markdown("""
 - Computes **Baseline WBGT** and **Adjusted WBGT** (after clothing/PPE, vehicle/enclosure, radiant/hot-surface, and site-specific additional factors)
-- Uses **Instrument TWL (W/m²) readings** *if available* (sites with TWL instruments can enter the reading)
-- Estimates **MWL (W/m²)** when an instrument TWL reading is not available
+- Uses **Estimated Cooling Capacity (HART Model)** internally to support HSP interpretation
 - Computes **HSP** (Heat-Strain Profile) to express **Human Cooling Margin** under current conditions
 - Provides **Supervisor Guidance** and maintains an **Audit Log**
 """)
@@ -671,9 +733,15 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
     st.info("""
 **Scientific Basis (High-Level)**  
 **Wet Bulb Globe Temperature (WBGT)** supports screening and policy-level heat-hazard decisions.  
-**Thermal Work Limit (TWL)** provides instrument-based environmental cooling capacity where available.  
-**Maximum Work Limit (MWL)** is used here as a modeled cooling-capacity proxy when TWL is not measured.  
+**Estimated Cooling Capacity (HART Model)** is used internally as a modeled environmental cooling-capacity value.  
 **Heat-Strain Profile (HSP)** compares heat load against cooling capacity to show how much physiological margin remains.
+""")
+
+    st.info("""
+**Standards Alignment**  
+HART is designed primarily as an occupational heat-stress decision-support tool aligned with the principles of **ISO 7243** for WBGT-based heat-stress assessment. ISO 7243 treats WBGT as a screening method for identifying potential heat stress; when conditions are complex or additional interpretation is required, more detailed physiological assessment may be considered.
+
+HART therefore uses **WBGT as the primary environmental screening indicator**, while adding practical interpretation through **Wet-Bulb / evaporation guidance**, **HSP**, and worksite additional factors such as PPE/clothing, enclosure effects, radiant heat exposure, air movement, and acclimatization. HART also references concepts used in ACGIH, NIOSH, OSHA and other recognized heat-stress guidance. Site-specific regulations, policies, and professional judgement always take precedence.
 """)
 
     # Collapsible definitions / explanations (compact welcome screen)
@@ -684,10 +752,7 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
 - **Heat Strain**: The Body’s Physiological Response while trying to maintain thermal balance
 - **Wet-Bulb Temperature (WB)**: Reflects evaporative cooling potential and sweat evaporation efficiency (a key physiological limiter)
 - **Wet Bulb Globe Temperature (WBGT)**: Screening heat-stress index used to guide permissible exposure limits and baseline decisions in occupational practice
-- **Thermal Work Limit (TWL)**: Instrument-measured cooling capacity of the environment (W/m²)
-- **Maximum Work Limit (MWL, W/m²)**: Modeled cooling capacity proxy when TWL instrumentation is not available  
-  – Higher MWL → Longer Sustainable Work Duration  
-  – Lower MWL → Shorter Sustainable Work Duration
+- **Estimated Cooling Capacity (HART Model)**: Modeled environmental cooling-capacity value used internally for HSP interpretation
 - **Heat-Strain Profile (HSP)**: Heat demand relative to human cooling capacity  
   – Lower HSP = Safer  
   – Higher HSP = Reduced Ability To Dissipate Heat
@@ -696,9 +761,14 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
 - **Heat Assessment & Response Tool (HART)**: a memorable short name for this field-deployable pilot system dashboard.
 
 **HSP interpretation (Practical)**
-- 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  
-- 🟠 **0.80–0.99** → Heat Balance Marginal  
-- 🔴 **HSP ≥ 1.00** → Heat Gain Likely Exceeds Heat Loss
+- 🟢 **HSP < 0.55** → Adequate cooling possible; routine control measures remain appropriate  
+- 🟢 **0.55–0.59** → Cooling margin slightly reduced  
+- 🟢 **0.60–0.64** → PPE/worksite factors beginning to narrow cooling margin  
+- 🟢 **0.65–0.69** → Cooling margin narrowing further  
+- 🟢 **0.70–0.74** → Cooling margin reducing  
+- 🟢 **0.75–0.79** → Approaching marginal cooling  
+- 🟠 **0.80–0.99** → Cooling margin narrowing  
+- 🔴 **HSP ≥ 1.00** → Heat gain may exceed cooling capacity due to limited sweat evaporation
 """)
 
     # Sources / standards reference (lightweight list to reassure reviewers)
@@ -707,7 +777,7 @@ if ss.get("app_mode") == "professional" and not ss["landing_open"]:
 **Sources of Screening Thresholds and Adjustment Concepts (High-Level):**
 - **WBGT**: widely used heat-stress screening index (as PEL or OEL) in occupational hygiene (commonly referenced in **ACGIH TLV®/Action Limit**, **NIOSH/OSHA guidance**, and **ISO heat-stress frameworks**).
 - **Worksite Additional Factors**: Practical correction concepts aligned with published guidance on **clothing/PPE impacts, air movement, radiant heat, and enclosure effects**.
-- **HSP (Heat-Strain Profile)**: a *Physiology-Facing* indicator that compares estimated **cooling capacity (MWL proxy)** vs **heat load**, to help supervisors interpret “how tight the cooling margin is” beyond a single index.
+- **HSP (Heat-Strain Profile)**: a *Physiology-Facing* indicator that compares estimated **cooling capacity (HART Model)** vs **heat load**, to help supervisors interpret “how tight the cooling margin is” beyond a single index.
 
 **Note:** This app is a decision-support field-deployable pilot system. Site policy, IH/OH judgement, and medical protocols always override.
 """)
@@ -809,9 +879,14 @@ with st.expander("📌 Quick Reference (WBGT bands + HSP interpretation)", expan
     st.write(f"🔴 WITHDRAWAL: ≥ {fmt_temp(C, ss.get('units','metric'))}")
 
     st.markdown("**HSP (Heat-Strain Profile):**")
-    st.write("🟢 **HSP < 0.80** → Cooling exceeds heat load (good margin)")
-    st.write("🟠 **0.80 – 0.99** → Marginal heat balance (close monitoring)")
-    st.write("🔴 **HSP ≥ 1.00** → Heat gain likely exceeds heat loss (rapid risk escalation)")
+    st.write("🟢 **HSP < 0.55** → Adequate cooling possible; routine control measures remain appropriate")
+    st.write("🟢 **0.55 – 0.59** → Cooling margin slightly reduced; continue hydration and supervision")
+    st.write("🟢 **0.60 – 0.64** → Worksite factors beginning to narrow cooling margin")
+    st.write("🟢 **0.65 – 0.69** → Cooling margin narrowing further; confirm control measures")
+    st.write("🟢 **0.70 – 0.74** → Cooling margin reducing; increase attention to hydration/rest/symptoms")
+    st.write("🟢 **0.75 – 0.79** → Approaching marginal cooling; prepare to escalate if exposure continues")
+    st.write("🟠 **0.80 – 0.99** → Cooling margin narrowing; increase supervision")
+    st.write("🔴 **HSP ≥ 1.00** → Heat gain may exceed cooling capacity due to limited sweat evaporation")
 
     st.markdown("**What HSP means in practice:**")
     st.write("• Environmental HSP = before worksite additional factors")
@@ -1136,7 +1211,7 @@ with col5:
 # Validate environmental inputs before baseline/WBGT/HSP calculations.
 _val_errors, _val_warnings = hart_validate_all_inputs(
     ss.get("db_c"), ss.get("rh_pct"), ss.get("gt_c"), ss.get("ws_ms"), ss.get("p_kpa"),
-    ss.get("wbgt_instr", 0.0), ss.get("twl_measured", 0.0)
+    ss.get("wbgt_instr", 0.0), ss.get("reference_capacity", 0.0)
 )
 hart_show_validation_messages(_val_errors, _val_warnings)
 
@@ -1262,18 +1337,18 @@ with st.expander("🧭 Optional Lookup (Baseline WBGT + Instrument Reference)", 
         st.caption("Wet-bulb is retained for technical transparency. Routine supervisor decisions should use WBGT/HSP guidance and site policy.")
 
     st.markdown("---")
-    st.markdown("**Instrument Reference (Optional)**")
+    st.markdown("**Instrument / Technical Reference (Optional)**")
     st.markdown(
-        "<span style='color:#222;'>Optional: Enter instrument TWL or WBGT values for side-by-side reference. These values do <b>not</b> change the modelled baseline or worksite additional factors.</span>",
+        "<span style='color:#222;'>Optional: Enter reference cooling-capacity or WBGT values for side-by-side technical review. These values do <b>not</b> change the modelled baseline or worksite additional factors.</span>",
         unsafe_allow_html=True
     )
 
     colA, colB = st.columns(2)
     with colA:
-        ss["twl_measured"] = st.number_input(
-            "Instrument TWL (W/m²)",
+        ss["reference_capacity"] = st.number_input(
+            "Reference Cooling Capacity (W/m²)",
             min_value=0.0,
-            value=float(hart_clamp_value("twl_measured", ss.get("twl_measured", 0.0))),
+            value=float(hart_clamp_value("reference_capacity", ss.get("reference_capacity", 0.0))),
             max_value=500.0,
             step=5.0
         )
@@ -1287,7 +1362,7 @@ with st.expander("🧭 Optional Lookup (Baseline WBGT + Instrument Reference)", 
         )
 
 # Flag if calibration is available (for Block 7 HSP display)
-ss["hsp_calib_ready"] = bool(ss.get("twl_measured", 0.0) > 0 and ss.get("wbgt_instr", 0.0) > 0)
+ss["hsp_calib_ready"] = bool(ss.get("reference_capacity", 0.0) > 0 and ss.get("wbgt_instr", 0.0) > 0)
 
 # ======================================================================
 # Exposure adjustments (°C internal truth)
@@ -1651,7 +1726,7 @@ def _wbgt_band_from_eff(wbgt_eff_c, A, B, C):
     if wbgt_eff_c < A:
         return ("🟢", "LOW RISK", "Routine work acceptable. Maintain hydration and routine supervision.", 0, "#2ecc71")
     if wbgt_eff_c < B:
-        return ("🟠", "CAUTION", "Increase supervision. Maintain hydration and follow site-approved work–rest practices.", 1, "#f39c12")
+        return ("🟠", "CAUTION", "Increase supervision. Maintain hydration and follow site-approved work–rest practices and heat-stress control measures.", 1, "#f39c12")
     if wbgt_eff_c < C:
         return ("🔴", "HIGH STRAIN", "Reduce heat exposure. Move to cooler or shaded areas where feasible. Apply site-approved work–rest controls. Support cooling and maintain close worker monitoring.", 2, "#e74c3c")
     return ("⛔", "WITHDRAWAL", "Avoid routine work. Only essential tasks should proceed under site policy, with strict controls and close monitoring.", 3, "#800000")
@@ -1757,7 +1832,7 @@ mwl_source = "—"
 mwl_cap = None
 
 if wbgt_env is not None:
-    inst_cap = float(ss.get("twl_measured", 0) or 0)
+    inst_cap = float(ss.get("reference_capacity", 0) or 0)
     if inst_cap > 0:
         mwl_raw = inst_cap
         mwl_source = "Instrument capacity input"
@@ -1788,7 +1863,7 @@ if wbgt_env is not None:
     # Rationale: field users should see a meaningful but still conservative improvement
     # in modeled cooling capacity as air movement increases from ~0.5 to 2–3 m/s.
     # The response remains nonlinear and capped; it is NOT intended to numerically
-    # reproduce TWL values, and it should not make very high wind appear automatically safe.
+    # reproduce any proprietary calculator, and it should not make very high wind appear automatically safe.
     wind_cap_bonus = 34.0 * math.log1p(max(0.0, ws - 0.5)) / math.log1p(3.5)
     wind_cap_bonus = max(0.0, min(45.0, wind_cap_bonus))
     mwl_cap += wind_cap_bonus
@@ -1825,12 +1900,13 @@ if wbgt_env is not None:
     hsp = (wbgt_op * 200.0) / (max(1.0, mwl_op) * 30.0)
     ss["hsp"] = hsp
 
+    h_icon, h_band, _hsp_detail_msg = interpret_hsp(hsp)
     if hsp < 0.8:
-        h_icon, h_band, h_color = "🟢", "Cooling Exceeds Heat Load (Physiological Margin Available)", "#2ecc71"
+        h_color = "#2ecc71"
     elif hsp < 1.0:
-        h_icon, h_band, h_color = "🟠", "Borderline — Monitor Closely", "#f39c12"
+        h_color = "#f39c12"
     else:
-        h_icon, h_band, h_color = "🔴", "Cooling Inadequate — Heat Strain Likely", "#e74c3c"
+        h_color = "#e74c3c"
 
 # -----------------------------
 # Override logic (conservative): policy first; HSP only if more protective
@@ -1873,8 +1949,8 @@ else:
     pill = '<span class="pill pill-withdrawal">WITHDRAWAL</span>'
 
 hsp_value_disp = f"{hsp:.2f}" if hsp is not None else "—"
+h_icon, h_band, hsp_foot = interpret_hsp(hsp)
 hsp_sub = f"{h_icon} {h_band}" if hsp is not None else "Baseline WBGT not available (HSP not computed)"
-hsp_foot = f"Modeled Cooling Capacity (MWL proxy): {mwl_op:.0f} W/m²" if mwl_op is not None else "Provide baseline WBGT to enable HSP."
 mwl_loss = (float(mwl_env) - float(mwl_op)) if (mwl_env is not None and mwl_op is not None) else None
 
 # -----------------------------
@@ -1924,7 +2000,7 @@ if _label.startswith("LOW"):
     decision_message = "Maintain hydration and routine supervision."
 elif _label.startswith("CAUTION"):
     decision_title = "🟠 INCREASE SUPERVISION"
-    decision_message = "Enforce hydration and follow site-approved work–rest practices."
+    decision_message = "Enforce hydration and follow site-approved work–rest practices and heat-stress control measures."
 elif _label.startswith("HIGH"):
     decision_title = "🔴 REDUCE HEAT EXPOSURE"
     decision_message = "Reduce heat exposure. Apply site-approved work–rest controls. Provide cooling opportunities and maintain close worker monitoring."
@@ -2157,18 +2233,18 @@ st.markdown(
 f"""
 <div class="kpi-grid">
 
-  <div class="kpi-card" style="border-left:7px solid {band_color};">
-    <div class="kpi-label">Adjusted WBGT (Guideline)</div>
-    <div class="kpi-value">{wbgt_disp}</div>
-    <div class="kpi-sub">{icon} <b>{wbgt_policy_band}</b> {pill}</div>
-    <div class="kpi-foot">{wbgt_policy_msg}<br>Worksite additional factors applied: <b>{pen_disp}</b></div>
-  </div>
-
   <div class="kpi-card" style="border-left:7px solid {h_color};">
     <div class="kpi-label">Heat-Strain Profile (HSP)</div>
     <div class="kpi-value">{hsp_value_disp}</div>
     <div class="kpi-sub"><b>{hsp_sub}</b></div>
     <div class="kpi-foot">{hsp_foot}</div>
+  </div>
+
+  <div class="kpi-card" style="border-left:7px solid {band_color};">
+    <div class="kpi-label">Adjusted WBGT (Guideline)</div>
+    <div class="kpi-value">{wbgt_disp}</div>
+    <div class="kpi-sub">{icon} <b>{wbgt_policy_band}</b> {pill}</div>
+    <div class="kpi-foot">{wbgt_policy_msg}<br>Worksite additional factors applied: <b>{pen_disp}</b></div>
   </div>
 
 </div>
@@ -2189,16 +2265,21 @@ with st.expander("ℹ️ HSP Details (Tap To Expand)", expanded=False):
     st.markdown("**HSP Field Guide**")
 
     st.markdown(
-        "- 🟢 **HSP < 0.80** → Cooling Exceeds Heat Load  \n"
-        "- 🟠 **0.80–0.99** → Heat Balance Marginal  \n"
-        "- 🔴 **HSP ≥ 1.00** → Heat Gain Likely Exceeds Heat Loss"
+        "- 🟢 **HSP < 0.55** → Adequate cooling possible; routine control measures remain appropriate  \n"
+        "- 🟢 **0.55–0.59** → Cooling margin slightly reduced; continue hydration and supervision  \n"
+        "- 🟢 **0.60–0.64** → PPE or worksite factors are beginning to narrow the cooling margin  \n"
+        "- 🟢 **0.65–0.69** → Cooling margin is narrowing further; confirm control measures before prolonged work  \n"
+        "- 🟢 **0.70–0.74** → Cooling margin reducing; increase attention to hydration, rest access and symptom monitoring  \n"
+        "- 🟢 **0.75–0.79** → Approaching marginal cooling; prepare to escalate if exposure continues or conditions worsen  \n"
+        "- 🟠 **0.80–0.99** → Cooling margin narrowing; increase supervision and heat-stress control measures  \n"
+        "- 🔴 **HSP ≥ 1.00** → Heat gain may exceed cooling capacity due to limited sweat evaporation"
     )
 
     if (mwl_env is not None) and (mwl_op is not None):
         st.info(
-            f"Cooling capacity (environmental): {mwl_env:.0f} W/m²  \n"
-            f"Cooling capacity (operational): {mwl_op:.0f} W/m²  \n"
-            f"Source: {mwl_source} | Operational capacity reflects worksite conditions (PPE / enclosure / radiant load)"
+            f"Estimated Cooling Capacity (HART Model): {mwl_op:.0f} W/m²  \n"
+            f"Used internally for HSP. This is a modeled decision-support value, not an instrument measurement. "
+            f"Operational value reflects worksite conditions such as PPE, enclosure and radiant heat."
         )
 
  
@@ -2511,8 +2592,8 @@ with st.expander("ℹ About HART • Disclaimer • Feedback", expanded=False):
     st.markdown(f"""
 **© 2026 Dr. Gummanur T. Manjunath — Developer of HART® (Heat Assessment & Response Tool)**
 
-Field Heat-Stress Decision Support System integrating **WBGT • MWL • HSP**  
-*(Instrument TWL input supported where available)*
+Field Heat-Stress Decision Support System integrating **WBGT • Wet-Bulb Evaporation Guidance • HSP**  
+*(Estimated Cooling Capacity is shown only in technical view as a HART Model value.)*
 
 **Purpose:**  
 HART is designed as a **field decision-support tool** to assist supervisors and occupational health professionals in assessing workplace heat risk.
