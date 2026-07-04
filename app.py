@@ -4,7 +4,7 @@
 """
 HART — Heat Assessment & Response Tool
 # Proprietary Evaluation License
-# July 04 2026
+# July 4 2026 at 3 35 PM
 Copyright (c) 2025–2026
 Dr. Gummanur T. Manjunath, MD
 All Rights Reserved
@@ -16,7 +16,7 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-APP_VERSION = "v1.9.74-github-duplicate-supervisory-cleanup"
+APP_VERSION = "v1.9.75-github-sidebar-font-cleanup"
 
 st.set_page_config(
     page_title="H.A.R.T - HEAT ASSESSMENT & RESPONSE TOOL",
@@ -122,11 +122,8 @@ div[data-testid="stHorizontalBlock"] {
 /* ---------- Mobile Optimization ---------- */
 @media (max-width: 700px) {
 
-  /* Hide sidebar on phones to maximize readability */
-  section[data-testid="stSidebar"], div[data-testid="stSidebar"] { display: none !important; }
-  /* Remove extra left padding reserved for sidebar */
-  .stApp { margin-left: 0 !important; }
-
+  /* Keep sidebar available on Streamlit Cloud and desktop/tablet layouts. */
+  section[data-testid="stSidebar"], div[data-testid="stSidebar"] { display: block !important; }
 
   div[data-testid="stHorizontalBlock"] {
       gap: 0.30rem;
@@ -203,9 +200,9 @@ div[data-testid="stHorizontalBlock"] {
     opacity: 1 !important;
   }
 
-  /* OPTIONAL: hide sidebar completely on phones (main content gets full width) */
-  section[data-testid="stSidebar"] { display: none !important; }
-  div[data-testid="collapsedControl"] { display: none !important; } /* hides the sidebar toggle */
+  /* Keep sidebar toggle visible; do not force-hide sidebar on Streamlit Cloud. */
+  section[data-testid="stSidebar"] { display: block !important; }
+  div[data-testid="collapsedControl"] { display: block !important; }
 }
 
 
@@ -360,6 +357,33 @@ section[data-testid="stSidebar"] .sidebar-band-legend .band-thr {
     opacity: 0.82 !important;
     padding-left: 1.05rem !important;
     margin-bottom: 0.12rem !important;
+}
+
+
+/* ---------- Compact technical detail boxes (v1.9.75) ---------- */
+.ecce-detail-box {
+    background: #e8f3ff;
+    border-radius: 12px;
+    padding: 0.72rem 0.95rem;
+    color: #0755a3 !important;
+    font-size: 0.88rem !important;
+    line-height: 1.35 !important;
+    font-weight: 500 !important;
+}
+.ecce-detail-box b { font-weight: 800 !important; }
+@media (max-width: 900px) {
+  .ecce-detail-box {
+      font-size: 0.78rem !important;
+      line-height: 1.28 !important;
+      padding: 0.62rem 0.78rem !important;
+  }
+  .ecce-detail-box p { margin-bottom: 0.18rem !important; }
+}
+
+/* Slightly reduce large HSP advisory text on narrower cloud/mobile views */
+@media (max-width: 900px) {
+  .sa-card { font-size: 0.90rem !important; line-height: 1.32 !important; }
+  .sa-card ul { margin-top: 0.30rem !important; margin-bottom: 0.25rem !important; }
 }
 
 </style>
@@ -3194,17 +3218,17 @@ if (mwl_env is not None) and (mwl_op is not None):
         _raw_disp = ss.get("ecce_raw", mwl_env)
         _cap_disp = ss.get("ecce_cap", mwl_env)
         _denom_disp = ss.get("hsp_capacity", mwl_op)
-        st.info(
-            f"ECCE used for HSP — Estimated Cooling Capacity of the Environment: {mwl_op:.0f} W/m²  \n"
-            f"Environmental ECCE used: {mwl_env:.0f} W/m² | Operational ECCE / HSP denominator: {_denom_disp:.0f} W/m²  \n"
-            f"Diagnostic values: raw ECCE estimate {_raw_disp:.0f} W/m²; smooth environmental ceiling {_cap_disp:.0f} W/m². The lower applicable value is used for HSP so the displayed ECCE and HSP denominator remain consistent.  \n"
-            f"HSP also applies the selected task/workload multiplier ({float(ss.get('hsp_met_multiplier', 1.0)):.2f}); a 300 W task can therefore show a slightly lower HSP than the older GitHub display that used the unadjusted 350 W reference.  \n"
-            "ECCE estimates the environment's capacity to dissipate body heat through evaporation, convection and radiation. "
-            "ECCE reflects environmental conditions and worksite additional factors; workload affects HSP by increasing body heat production relative to the available cooling capacity.  \n"
-            "WBGT, ECCE and HSP serve different purposes: WBGT indicates environmental heat-stress severity, ECCE indicates estimated cooling capacity, and HSP indicates heat load relative to available cooling capacity.  \n"
-            "Follow site HSE policy / SOP for WBGT- or TWL-based controls. Use HSP as an additional cooling-margin indicator. "
-            "ECCE is a modeled decision-support value, not an instrument measurement. "
-            f"Source: {mwl_source}."
+        st.markdown(
+            f"""
+            <div class="ecce-detail-box">
+              <p><b>ECCE used for HSP:</b> {mwl_op:.0f} W/m² &nbsp;|&nbsp; <b>Environmental ECCE:</b> {mwl_env:.0f} W/m² &nbsp;|&nbsp; <b>HSP denominator:</b> {_denom_disp:.0f} W/m²</p>
+              <p><b>Diagnostics:</b> raw ECCE {_raw_disp:.0f} W/m²; smooth environmental ceiling {_cap_disp:.0f} W/m². The lower applicable value is used for HSP.</p>
+              <p><b>Workload:</b> HSP applies the selected task/workload multiplier ({float(ss.get('hsp_met_multiplier', 1.0)):.2f}); workload increases heat production relative to available cooling capacity.</p>
+              <p><b>Interpretation:</b> WBGT indicates environmental heat-stress severity; ECCE indicates estimated cooling capacity; HSP indicates heat load relative to available cooling capacity.</p>
+              <p><b>Use:</b> Follow site HSE policy/SOP for WBGT- or TWL-based controls. HSP is an additional cooling-margin indicator. ECCE is modeled decision support, not an instrument measurement. Source: {mwl_source}.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
 with st.expander("🧪 HSP Validation Table — Developer Check", expanded=False):
